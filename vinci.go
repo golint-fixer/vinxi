@@ -40,7 +40,7 @@ func (v *Vinci) Use(handler interface{}) *Vinci {
 
 // UseError attaches a new middleware handler to the.
 func (v *Vinci) UseError(handler interface{}) *Vinci {
-	v.Layer.UseError(handler)
+	v.Layer.UsePhase("error", handler)
 	return v
 }
 
