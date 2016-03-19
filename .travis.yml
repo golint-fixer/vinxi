@@ -10,6 +10,7 @@ go:
 
 before_install:
   - go get github.com/nbio/st
+  - go get -u gopkg.in/vinci-proxy/layer.v0
   - go get -u -v github.com/axw/gocov/gocov
   - go get -u -v github.com/mattn/goveralls
   - go get -u -v github.com/golang/lint/golint
@@ -17,7 +18,7 @@ before_install:
 script:
   - diff -u <(echo -n) <(gofmt -s -d ./)
   - diff -u <(echo -n) <(go vet ./...)
-  - diff -u <(echo -n) <(golint ./...)
+  - diff -u <(echo -n) <(golint ./)
   - go test -v -race ./...
   - go test -v -race -covermode=atomic -coverprofile=coverage.out
 
