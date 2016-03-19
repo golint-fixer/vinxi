@@ -29,9 +29,9 @@ const (
 	ContentLength = "Content-Length"
 )
 
-// Hop-by-hop headers. These are removed when sent to the backend.
+// HopHeaders stores the hop-by-hop headers.
+// These are removed when sent to the backend.
 // http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html
-// Copied from reverseproxy.go, too bad
 var HopHeaders = []string{
 	Connection,
 	KeepAlive,
