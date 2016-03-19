@@ -6,11 +6,12 @@ import (
 )
 
 func main() {
-	fmt.Printf("Server listening on port: %d\n", 3100)
 	vs := vinci.NewServer(vinci.ServerOptions{Host: "localhost", Port: 3100})
 
-	vs.Vinci.Forward("http://localhost:8080")
+	// Forward all the traffic to httpbin.org
+	vs.Forward("http://httpbin.org")
 
+	fmt.Printf("Server listening on port: %d\n", 3100)
 	err := vs.Listen()
 	if err != nil {
 		fmt.Errorf("Error: %s\n", err)

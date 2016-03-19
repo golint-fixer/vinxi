@@ -6,13 +6,9 @@ import (
 )
 
 func main() {
-	mux := vinci.New(vinci.ServerOptions{Host: "localhost"})
+	server := vinci.New(vinci.ServerOptions{Host: "localhost", Post: 3100})
 
-	mux.Route("/").
-		Forward("http://foo.com").
-		Use(middleware.SetHeader())
-
-	err := server.Listen(3100)
+	err := server.Listen()
 	if err != nil {
 		fmt.Errorf("Error: %s\n", err)
 	}
