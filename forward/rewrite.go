@@ -7,12 +7,13 @@ import (
 	"strings"
 )
 
-// Rewriter is responsible for removing hop-by-hop headers and setting forwarding headers
+// HeaderRewriter is responsible for removing hop-by-hop headers and setting forwarding headers.
 type HeaderRewriter struct {
 	TrustForwardHeader bool
 	Hostname           string
 }
 
+// Rewrite rewrites the given request removing hop-by-hop headers and setting forwarding headers.
 func (rw *HeaderRewriter) Rewrite(req *http.Request) {
 	if clientIP, _, err := net.SplitHostPort(req.RemoteAddr); err == nil {
 		if rw.TrustForwardHeader {

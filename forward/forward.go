@@ -1,4 +1,4 @@
-// Package forwarder implements http handler that forwards requests to remote server
+// Package forward implements http handler that forwards requests to remote server
 // and serves back the response.
 // websocket proxying support based on https://github.com/yhat/wsutil
 package forward
@@ -15,11 +15,12 @@ type ReqRewriter interface {
 	Rewrite(r *http.Request)
 }
 
-type optSetter func(f *Forwarder) error
+// OptSetter represents the forwarder setter function.
+type OptSetter func(f *Forwarder) error
 
 // PassHostHeader specifies if a client's Host header field should
 // be delegated
-func PassHostHeader(b bool) optSetter {
+func PassHostHeader(b bool) OptSetter {
 	return func(f *Forwarder) error {
 		f.passHost = b
 		return nil
@@ -28,7 +29,7 @@ func PassHostHeader(b bool) optSetter {
 
 // RoundTripper sets a new http.RoundTripper
 // Forwarder will use http.DefaultTransport as a default round tripper
-func RoundTripper(r http.RoundTripper) optSetter {
+func RoundTripper(r http.RoundTripper) OptSetter {
 	return func(f *Forwarder) error {
 		f.roundTripper = r
 		return nil
@@ -36,7 +37,7 @@ func RoundTripper(r http.RoundTripper) optSetter {
 }
 
 // Rewriter defines a request rewriter for the HTTP forwarder
-func Rewriter(r ReqRewriter) optSetter {
+func Rewriter(r ReqRewriter) OptSetter {
 	return func(f *Forwarder) error {
 		f.httpForwarder.rewriter = r
 		return nil
@@ -44,7 +45,7 @@ func Rewriter(r ReqRewriter) optSetter {
 }
 
 // WebsocketRewriter defines a request rewriter for the websocket forwarder
-func WebsocketRewriter(r ReqRewriter) optSetter {
+func WebsocketRewriter(r ReqRewriter) OptSetter {
 	return func(f *Forwarder) error {
 		f.websocketForwarder.rewriter = r
 		return nil
@@ -52,7 +53,7 @@ func WebsocketRewriter(r ReqRewriter) optSetter {
 }
 
 // ErrorHandler is a functional argument that sets error handler of the server
-func ErrorHandler(h utils.ErrorHandler) optSetter {
+func ErrorHandler(h utils.ErrorHandler) OptSetter {
 	return func(f *Forwarder) error {
 		f.errHandler = h
 		return nil
@@ -61,7 +62,7 @@ func ErrorHandler(h utils.ErrorHandler) optSetter {
 
 // Logger specifies the logger to use.
 // Forwarder will default to utils.NullLogger if no logger has been specified
-func Logger(l utils.Logger) optSetter {
+func Logger(l utils.Logger) OptSetter {
 	return func(f *Forwarder) error {
 		f.log = l
 		return nil
@@ -83,7 +84,7 @@ type handlerContext struct {
 }
 
 // New creates an instance of Forwarder based on the provided list of configuration options
-func New(setters ...optSetter) (*Forwarder, error) {
+func New(setters ...OptSetter) (*Forwarder, error) {
 	f := &Forwarder{
 		httpForwarder:      &httpForwarder{},
 		websocketForwarder: &websocketForwarder{},

@@ -1,8 +1,6 @@
-# vinci [![Build Status](https://travis-ci.org/vinci-proxy/vinci.png)](https://travis-ci.org/vinci-proxy/vinci) [![GitHub release](https://img.shields.io/badge/version-0.1.0-orange.svg?style=flat)](https://github.com/vinci-proxy/vinci/releases) [![GoDoc](https://godoc.org/github.com/vinci-proxy/vinci?status.svg)](https://godoc.org/github.com/vinci-proxy/vinci) [![Coverage Status](https://coveralls.io/repos/github/vinci-proxy/vinci/badge.svg?branch=master)](https://coveralls.io/github/vinci-proxy/vinci?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/vinci-proxy/vinci)](https://goreportcard.com/report/github.com/vinci-proxy/vinci) [![Status](https://img.shields.io/badge/status-beta-blue.svg)](#)
-
 <img src="http://vinci-proxy.github.io/public/images/large.png" />
 
-Versatile and hackable web proxy toolkit written in Go.
+[![Build Status](https://travis-ci.org/vinci-proxy/vinci.png)](https://travis-ci.org/vinci-proxy/vinci) [![GitHub release](https://img.shields.io/badge/version-0.1.0-orange.svg?style=flat)](https://github.com/vinci-proxy/vinci/releases) [![GoDoc](https://godoc.org/github.com/vinci-proxy/vinci?status.svg)](https://godoc.org/github.com/vinci-proxy/vinci) [![Coverage Status](https://coveralls.io/repos/github/vinci-proxy/vinci/badge.svg?branch=master)](https://coveralls.io/github/vinci-proxy/vinci?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/vinci-proxy/vinci)](https://goreportcard.com/report/github.com/vinci-proxy/vinci) [![Status](https://img.shields.io/badge/status-beta-blue.svg)](#)
 
 **Note**: vinci is still beta under heavy development.
 
@@ -23,9 +21,11 @@ Versatile and hackable web proxy toolkit written in Go.
 go get -u gopkg.in/vinci-proxy/vinci.v0
 ```
 
-## Documentation
+## Docs
 
 - Introduction
+- Installation
+- API
 - Design goals
 - Use cases
 - Middleware layer

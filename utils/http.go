@@ -40,6 +40,7 @@ func (p *ProxyWriter) WriteHeader(code int) {
 	p.W.WriteHeader(code)
 }
 
+// Flush flushes the cached data, if possible.
 func (p *ProxyWriter) Flush() {
 	if f, ok := p.W.(http.Flusher); ok {
 		f.Flush()
@@ -89,14 +90,17 @@ func NewBufferWriter(w io.WriteCloser) *BufferWriter {
 	}
 }
 
+// Close closes the used WriteCloser.
 func (b *BufferWriter) Close() error {
 	return b.W.Close()
 }
 
+// Header returns rw.Header.
 func (b *BufferWriter) Header() http.Header {
 	return b.H
 }
 
+// Write writes the giben
 func (b *BufferWriter) Write(buf []byte) (int, error) {
 	return b.W.Write(buf)
 }
@@ -112,7 +116,7 @@ type nopWriteCloser struct {
 
 func (*nopWriteCloser) Close() error { return nil }
 
-// NopCloser returns a WriteCloser with a no-op Close method wrapping
+// NopWriteCloser returns a WriteCloser with a no-op Close method wrapping
 // the provided Writer w.
 func NopWriteCloser(w io.Writer) io.WriteCloser {
 	return &nopWriteCloser{w}

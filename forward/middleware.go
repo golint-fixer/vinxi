@@ -5,7 +5,8 @@ import (
 	"net/url"
 )
 
-// TODO: support passing options
+// To returns an http.HandlerFunc that forwards the incoming request to
+// the given URI server.
 func To(uri string) func(w http.ResponseWriter, r *http.Request) {
 	parsedURL, err := url.Parse(uri)
 	if err != nil {
