@@ -12,6 +12,7 @@ before_install:
   - go get github.com/nbio/st
   - go get -u gopkg.in/vinci-proxy/layer.v0
   - go get -u gopkg.in/vinci-proxy/vinci.v0
+  - go get -u golang.org/x/net/websocket
   - go get -u github.com/vulcand/oxy/testutils
   - go get -u -v github.com/axw/gocov/gocov
   - go get -u -v github.com/mattn/goveralls
