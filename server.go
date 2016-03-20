@@ -83,12 +83,6 @@ func (s *Server) Use(handler interface{}) *Server {
 	return s
 }
 
-// UseError attaches a new middleware handler to the.
-func (s *Server) UseError(handler interface{}) *Server {
-	s.Vinci.UseError(handler)
-	return s
-}
-
 // UsePhase attaches a new middleware handler to a specific phase.
 func (s *Server) UsePhase(phase string, handler interface{}) *Server {
 	s.Vinci.UsePhase(phase, handler)

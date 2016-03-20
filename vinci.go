@@ -1,8 +1,8 @@
 package vinci
 
 import (
+	"gopkg.in/vinci-proxy/forward.v0"
 	"gopkg.in/vinci-proxy/layer.v0"
-	"gopkg.in/vinci-proxy/vinci.v0/forward"
 	"net/http"
 )
 
@@ -35,12 +35,6 @@ func (v *Vinci) UseForwarder(forwarder http.Handler) *Vinci {
 // Use attaches a new middleware handler for incoming HTTP traffic.
 func (v *Vinci) Use(handler interface{}) *Vinci {
 	v.Layer.Use(handler)
-	return v
-}
-
-// UseError attaches a new middleware handler to the.
-func (v *Vinci) UseError(handler interface{}) *Vinci {
-	v.Layer.UsePhase("error", handler)
 	return v
 }
 
