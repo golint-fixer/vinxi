@@ -34,13 +34,13 @@ func (v *Vinci) UseForwarder(forwarder http.Handler) *Vinci {
 
 // Use attaches a new middleware handler for incoming HTTP traffic.
 func (v *Vinci) Use(handler interface{}) *Vinci {
-	v.Layer.Use(handler)
+	v.Layer.Use("request", handler)
 	return v
 }
 
 // UsePhase attaches a new middleware handler to a specific phase.
 func (v *Vinci) UsePhase(phase string, handler interface{}) *Vinci {
-	v.Layer.UsePhase(phase, handler)
+	v.Layer.Use(phase, handler)
 	return v
 }
 
