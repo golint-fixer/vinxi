@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/vinci-proxy/vinci.v0"
+	"gopkg.in/vinxi/vinxi.v0"
 )
 
 func main() {
-	vs := vinci.NewServer(vinci.ServerOptions{Host: "localhost", Port: 3100})
+	vs := vinxi.NewServer(vinxi.ServerOptions{Host: "localhost", Port: 3100})
 
 	// Forward all the traffic to httpbin.org
 	vs.Forward("http://httpbin.org")

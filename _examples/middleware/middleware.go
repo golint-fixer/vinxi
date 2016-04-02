@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/vinci-proxy/vinci.v0"
+	"gopkg.in/vinxi/vinxi.v0"
 )
 
 func main() {
-	server := vinci.New(vinci.ServerOptions{Host: "localhost", Post: 3100})
+	server := vinxi.New(vinxi.ServerOptions{Host: "localhost", Post: 3100})
 
 	err := server.Listen()
 	if err != nil {

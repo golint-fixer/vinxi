@@ -1,1 +1,1 @@
-package vinci
+package vinxi

@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/vinci-proxy/vinci.v0"
-	"gopkg.in/vinci-proxy/vinci.v0/intercept"
+	"gopkg.in/vinxi/vinxi.v0"
+	"gopkg.in/vinxi/vinxi.v0/intercept"
 	"strings"
 	// "io/ioutil"
 	// "net/http"
@@ -11,7 +11,7 @@ import (
 
 func main() {
 	fmt.Printf("Server listening on port: %d\n", 3100)
-	vs := vinci.NewServer(vinci.ServerOptions{Host: "localhost", Port: 3100})
+	vs := vinxi.NewServer(vinxi.ServerOptions{Host: "localhost", Port: 3100})
 
 	vs.Vinci.Use(intercept.Request(func(req *intercept.RequestModifier) {
 		str, _ := req.ReadString()

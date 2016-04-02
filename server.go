@@ -1,4 +1,4 @@
-package vinci
+package vinxi
 
 import (
 	"net/http"
@@ -23,6 +23,7 @@ type ServerOptions struct {
 	ReadTimeout  int
 	WriteTimeout int
 	Host         string
+	Forward      string
 	CertFile     string
 	KeyFile      string
 }
@@ -61,13 +62,17 @@ func NewServer(o ServerOptions) *Server {
 		WriteTimeout:   time.Duration(o.WriteTimeout) * time.Second,
 	}
 
-	vinci := New()
-	vinci.BindServer(svr)
+	vinxi := New()
+	vinxi.BindServer(svr)
+
+	if o.Forward != "" {
+		vinxi.Forward(o.Forward)
+	}
 
 	return &Server{
 		Options: o,
 		Server:  svr,
-		Vinci:   vinci,
+		Vinci:   vinxi,
 	}
 }
 

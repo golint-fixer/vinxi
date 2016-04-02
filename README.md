@@ -1,10 +1,10 @@
-<img src="http://vinci-proxy.github.io/public/images/large.png" />
+<img src="http://vinxi.github.io/public/images/large.png" />
 
-[![Build Status](https://travis-ci.org/vinci-proxy/vinci.png)](https://travis-ci.org/vinci-proxy/vinci) [![GitHub release](https://img.shields.io/badge/version-0.1.0-orange.svg?style=flat)](https://github.com/vinci-proxy/vinci/releases) [![GoDoc](https://godoc.org/github.com/vinci-proxy/vinci?status.svg)](https://godoc.org/github.com/vinci-proxy/vinci) [![Coverage Status](https://coveralls.io/repos/github/vinci-proxy/vinci/badge.svg?branch=master)](https://coveralls.io/github/vinci-proxy/vinci?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/vinci-proxy/vinci)](https://goreportcard.com/report/github.com/vinci-proxy/vinci) [![Status](https://img.shields.io/badge/status-beta-blue.svg)](#)
+[![Build Status](https://travis-ci.org/vinxi/vinxi.png)](https://travis-ci.org/vinxi/vinxi) [![GitHub release](https://img.shields.io/badge/version-0.1.0-orange.svg?style=flat)](https://github.com/vinxi/vinxi/releases) [![GoDoc](https://godoc.org/github.com/vinxi/vinxi?status.svg)](https://godoc.org/github.com/vinxi/vinxi) [![Coverage Status](https://coveralls.io/repos/github/vinxi/vinxi/badge.svg?branch=master)](https://coveralls.io/github/vinxi/vinxi?branch=master) [![Go Report Card](https://goreportcard.com/badge/github.com/vinxi/vinxi)](https://goreportcard.com/report/github.com/vinxi/vinxi) [![Status](https://img.shields.io/badge/status-beta-blue.svg)](#)
 
-**Note**: vinci is still beta under heavy development.
+**Note**: vinxi is still beta under heavy development.
 
-## Goals
+## Features
 
 - Simple, idiomatic, hackable API.
 - Designed for strong composability and extensibility.
@@ -18,9 +18,10 @@
 ## Installation
 
 ```bash
-go get -u gopkg.in/vinci-proxy/vinci.v0
+go get -u gopkg.in/vinxi/vinxi.v0
 ```
 
+<!--
 ## Docs
 
 - Introduction
@@ -35,14 +36,15 @@ go get -u gopkg.in/vinci-proxy/vinci.v0
 - Performance
 - Benchmarking
 - Examples
+-->
 
 ## API
 
-See [godoc reference](https://godoc.org/github.com/vinci-proxy/vinci) for detailed API documentation.
+See [godoc reference](https://godoc.org/github.com/vinxi/vinxi) for detailed API documentation.
 
 ## Examples
 
-See [examples](https://github.com/vinci-proxy/vinci/tree/master/_examples) directory.
+See [examples](https://github.com/vinxi/vinxi/tree/master/_examples) directory.
 
 ## License
 

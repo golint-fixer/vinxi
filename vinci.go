@@ -1,8 +1,8 @@
-package vinci
+package vinxi
 
 import (
-	"gopkg.in/vinci-proxy/forward.v0"
-	"gopkg.in/vinci-proxy/layer.v0"
+	"gopkg.in/vinxi/forward.v0"
+	"gopkg.in/vinxi/layer.v0"
 	"net/http"
 )
 
@@ -10,13 +10,13 @@ import (
 // By default the proxy will reply with 502 Bad Gateway if no custom forwarder is defined.
 var DefaultForwarder = layer.FinalHandler
 
-// Vinci represents the vinci proxy structure.
+// Vinci represents the vinxi proxy structure.
 type Vinci struct {
 	// Layer stores the proxy top-level middleware layer.
 	Layer *layer.Layer
 }
 
-// New creates a new vinci proxy layer.
+// New creates a new vinxi proxy layer.
 func New() *Vinci {
 	return &Vinci{Layer: layer.New()}
 }
@@ -34,13 +34,13 @@ func (v *Vinci) UseForwarder(forwarder http.Handler) *Vinci {
 
 // Use attaches a new middleware handler for incoming HTTP traffic.
 func (v *Vinci) Use(handler interface{}) *Vinci {
-	v.Layer.Use(handler)
+	v.Layer.Use(layer.RequestPhase, handler)
 	return v
 }
 
 // UsePhase attaches a new middleware handler to a specific phase.
 func (v *Vinci) UsePhase(phase string, handler interface{}) *Vinci {
-	v.Layer.UsePhase(phase, handler)
+	v.Layer.Use(phase, handler)
 	return v
 }
 
@@ -56,7 +56,7 @@ func (v *Vinci) Flush() *Vinci {
 	return v
 }
 
-// BindServer binds the vinci handler to the given http.Server.
+// BindServer binds the vinxi handler to the given http.Server.
 func (v *Vinci) BindServer(server *http.Server) *Vinci {
 	server.Handler = v
 	return v
