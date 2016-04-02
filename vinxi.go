@@ -6,6 +6,25 @@ import (
 	"net/http"
 )
 
+// Middleware defines the required interface implemented
+// by public middleware capable entities in the vinxi ecosystem.
+type Middleware interface {
+	// Use is used to register one or multiple middleware handlers.
+	Use(...interface{}) Middleware
+
+	// UsePhase is used to register one or multiple middleware
+	// handlers for a specific middleware phase.
+	UsePhase(string, ...interface{}) Middleware
+
+	// UseFinalHandler is used to register the final request handler
+	// usually to define the error or forward handlers.
+	UseFinalHandler(http.Handler) Middleware
+
+	// Flush is used to flush the middleware stack
+	// removing all the registered handlers.
+	Flush()
+}
+
 // DefaultForwarder stores the default http.Handler to be used to forward the traffic.
 // By default the proxy will reply with 502 Bad Gateway if no custom forwarder is defined.
 var DefaultForwarder = layer.FinalHandler
@@ -23,24 +42,18 @@ func New() *Vinci {
 
 // Forward defines the default URL to forward incoming traffic.
 func (v *Vinci) Forward(uri string) *Vinci {
-	return v.UseForwarder(http.HandlerFunc(forward.To(uri)))
-}
-
-// UseForwarder uses a custom forwarder HTTP handler to proxy incoming traffic.
-func (v *Vinci) UseForwarder(forwarder http.Handler) *Vinci {
-	v.Layer.UseFinalHandler(forwarder)
-	return v
+	return v.UseFinalHandler(http.HandlerFunc(forward.To(uri)))
 }
 
 // Use attaches a new middleware handler for incoming HTTP traffic.
-func (v *Vinci) Use(handler interface{}) *Vinci {
-	v.Layer.Use(layer.RequestPhase, handler)
+func (v *Vinci) Use(handler ...interface{}) *Vinci {
+	v.Layer.Use(layer.RequestPhase, handler...)
 	return v
 }
 
 // UsePhase attaches a new middleware handler to a specific phase.
-func (v *Vinci) UsePhase(phase string, handler interface{}) *Vinci {
-	v.Layer.Use(phase, handler)
+func (v *Vinci) UsePhase(phase string, handler ...interface{}) *Vinci {
+	v.Layer.Use(phase, handler...)
 	return v
 }
 
@@ -51,9 +64,8 @@ func (v *Vinci) UseFinalHandler(fn http.Handler) *Vinci {
 }
 
 // Flush flushes all the middleware stack.
-func (v *Vinci) Flush() *Vinci {
+func (v *Vinci) Flush() {
 	v.Layer.Flush()
-	return v
 }
 
 // BindServer binds the vinxi handler to the given http.Server.
