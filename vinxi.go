@@ -3,6 +3,7 @@ package vinxi
 import (
 	"gopkg.in/vinxi/forward.v0"
 	"gopkg.in/vinxi/layer.v0"
+	"gopkg.in/vinxi/router.v0"
 	"net/http"
 )
 
@@ -33,11 +34,14 @@ var DefaultForwarder = layer.FinalHandler
 type Vinci struct {
 	// Layer stores the proxy top-level middleware layer.
 	Layer *layer.Layer
+
+	// Router stores the built-in router.
+	Router *router.Router
 }
 
 // New creates a new vinxi proxy layer.
 func New() *Vinci {
-	return &Vinci{Layer: layer.New()}
+	return &Vinci{Layer: layer.New(), Router: router.New()}
 }
 
 // Forward defines the default URL to forward incoming traffic.
