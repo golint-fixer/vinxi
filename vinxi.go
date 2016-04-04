@@ -64,42 +64,42 @@ func New() *Vinxi {
 // It also registers pat for HEAD requests. If this needs to be overridden, use
 // Head before Get with pat.
 func (v *Vinxi) Get(path string) *router.Route {
-	return r.Route("GET", path)
+	return v.Route("GET", path)
 }
 
 // Post will register a pattern for POST requests.
 func (v *Vinxi) Post(path string) *router.Route {
-	return r.Route("POST", path)
+	return v.Route("POST", path)
 }
 
 // Put will register a pattern for PUT requests.
 func (v *Vinxi) Put(path string) *router.Route {
-	return r.Route("PUT", path)
+	return v.Route("PUT", path)
 }
 
 // Delete will register a pattern for DELETE requests.
 func (v *Vinxi) Delete(path string) *router.Route {
-	return r.Route("DELETE", path)
+	return v.Route("DELETE", path)
 }
 
 // Options will register a pattern for OPTIONS requests.
 func (v *Vinxi) Options(path string) *router.Route {
-	return r.Route("OPTIONS", path)
+	return v.Route("OPTIONS", path)
 }
 
 // Patch will register a pattern for PATCH requests.
 func (v *Vinxi) Patch(path string) *router.Route {
-	return r.Route("PATCH", path)
+	return v.Route("PATCH", path)
 }
 
 // All will register a pattern for any HTTP method.
 func (v *Vinxi) All(path string) *router.Route {
-	return r.Route("*", path)
+	return v.Route("*", path)
 }
 
 // Route will register a new route for the given pattern and HTTP method.
 func (v *Vinxi) Route(method, path string) *router.Route {
-	return r.Router.Route(method, path)
+	return v.Router.Route(method, path)
 }
 
 // Forward defines the default URL to forward incoming traffic.
