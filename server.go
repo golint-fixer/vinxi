@@ -29,10 +29,10 @@ type ServerOptions struct {
 }
 
 // Server represents a simple wrapper around http.Server for better convenience
-// and easy set up using Vinci.
+// and easy set up using Vinxi.
 type Server struct {
-	// Vinci stores the Vinci layer instance.
-	Vinci *Vinci
+	// Vinxi stores the Vinxi layer instance.
+	Vinxi *Vinxi
 
 	// Server stores the http.Server instance.
 	Server *http.Server
@@ -72,31 +72,31 @@ func NewServer(o ServerOptions) *Server {
 	return &Server{
 		Options: o,
 		Server:  svr,
-		Vinci:   vinxi,
+		Vinxi:   vinxi,
 	}
 }
 
 // Forward defines the default URL to forward incoming traffic.
 func (s *Server) Forward(uri string) *Server {
-	s.Vinci.Forward(uri)
+	s.Vinxi.Forward(uri)
 	return s
 }
 
 // Use attaches a new middleware handler for incoming HTTP traffic.
 func (s *Server) Use(handler interface{}) *Server {
-	s.Vinci.Use(handler)
+	s.Vinxi.Use(handler)
 	return s
 }
 
 // UsePhase attaches a new middleware handler to a specific phase.
 func (s *Server) UsePhase(phase string, handler interface{}) *Server {
-	s.Vinci.UsePhase(phase, handler)
+	s.Vinxi.UsePhase(phase, handler)
 	return s
 }
 
 // UseFinalHandler uses a new middleware handler function as final handler.
 func (s *Server) UseFinalHandler(fn http.Handler) *Server {
-	s.Vinci.UseFinalHandler(fn)
+	s.Vinxi.UseFinalHandler(fn)
 	return s
 }
 
