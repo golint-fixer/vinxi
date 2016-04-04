@@ -63,42 +63,42 @@ func New() *Vinxi {
 // Get will register a pattern for GET requests.
 // It also registers pat for HEAD requests. If this needs to be overridden, use
 // Head before Get with pat.
-func (r *Vinxi) Get(path string) *router.Route {
+func (v *Vinxi) Get(path string) *router.Route {
 	return r.Route("GET", path)
 }
 
 // Post will register a pattern for POST requests.
-func (r *Vinxi) Post(path string) *router.Route {
+func (v *Vinxi) Post(path string) *router.Route {
 	return r.Route("POST", path)
 }
 
 // Put will register a pattern for PUT requests.
-func (r *Vinxi) Put(path string) *router.Route {
+func (v *Vinxi) Put(path string) *router.Route {
 	return r.Route("PUT", path)
 }
 
 // Delete will register a pattern for DELETE requests.
-func (r *Vinxi) Delete(path string) *router.Route {
+func (v *Vinxi) Delete(path string) *router.Route {
 	return r.Route("DELETE", path)
 }
 
 // Options will register a pattern for OPTIONS requests.
-func (r *Vinxi) Options(path string) *router.Route {
+func (v *Vinxi) Options(path string) *router.Route {
 	return r.Route("OPTIONS", path)
 }
 
 // Patch will register a pattern for PATCH requests.
-func (r *Vinxi) Patch(path string) *router.Route {
+func (v *Vinxi) Patch(path string) *router.Route {
 	return r.Route("PATCH", path)
 }
 
 // All will register a pattern for any HTTP method.
-func (r *Vinxi) All(path string) *router.Route {
+func (v *Vinxi) All(path string) *router.Route {
 	return r.Route("*", path)
 }
 
 // Route will register a new route for the given pattern and HTTP method.
-func (r *Vinxi) Route(method, path string) *router.Route {
+func (v *Vinxi) Route(method, path string) *router.Route {
 	return r.Router.Route(method, path)
 }
 
