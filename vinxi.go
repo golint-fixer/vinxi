@@ -1,61 +1,49 @@
 package vinxi
 
 import (
+	"net/http"
+
+	"gopkg.in/vinxi/context.v0"
 	"gopkg.in/vinxi/forward.v0"
 	"gopkg.in/vinxi/layer.v0"
 	"gopkg.in/vinxi/router.v0"
-	"net/http"
 )
 
 // DefaultForwarder stores the default http.Handler to be used to forward the traffic.
 // By default the proxy will reply with 502 Bad Gateway if no custom forwarder is defined.
-var DefaultForwarder = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	fwd, _ := forward.New(forward.PassHostHeader(true))
-	fwd.ServeHTTP(w, r)
-})
+var DefaultForwarder, _ = forward.New(forward.PassHostHeader(true))
 
 // Middleware defines the required interface implemented
 // by public middleware capable entities in the vinxi ecosystem.
 type Middleware interface {
 	// Use is used to register one or multiple middleware handlers.
 	Use(...interface{}) Middleware
-
 	// UsePhase is used to register one or multiple middleware
 	// handlers for a specific middleware phase.
 	UsePhase(string, ...interface{}) Middleware
-
 	// UseFinalHandler is used to register the final request handler
 	// usually to define the error or forward handlers.
 	UseFinalHandler(http.Handler) Middleware
+	// SetParent allows hierarchical middleware inheritance.
+	SetParent(layer.Middleware)
 }
 
-// Route represents the required route capable interface
-type Route interface {
-	Middleware
-	http.Handler
-	Forward(string) Route
-	Handle(http.HandlerFunc)
-}
-
-// Router represents the router capable interface.
-type Router interface {
-	Route(string, string) Route
-	Match(string string) (Route, error)
-}
-
-// Vinxi represents the vinxi proxy structure.
+// Vinxi represents the vinxi proxy layer.
 type Vinxi struct {
-	// Layer stores the proxy top-level middleware layer.
+	// Layer stores the proxy level middleware layer.
 	Layer *layer.Layer
-
 	// Router stores the built-in router.
 	Router *router.Router
 }
 
-// New creates a new vinxi proxy layer.
+// New creates a new vinxi proxy layer with default fields.
 func New() *Vinxi {
 	v := &Vinxi{Layer: layer.New(), Router: router.New()}
+	// Bind router with parent layer
+	v.Router.SetParent(v.Layer)
+	// Register the router in the middleware tail (this should change in the future)
 	v.Layer.UsePriority("request", layer.Tail, v.Router)
+	// Use the default forwarder as final middleware handler
 	v.UseFinalHandler(DefaultForwarder)
 	return v
 }
@@ -125,9 +113,20 @@ func (v *Vinxi) UseFinalHandler(fn http.Handler) *Vinxi {
 	return v
 }
 
+// SetForwader sets the default final traffic forwarder.
+func (v *Vinxi) SetForwader(fn http.Handler) *Vinxi {
+	v.Layer.UseFinalHandler(fn)
+	return v
+}
+
 // Flush flushes all the middleware stack.
 func (v *Vinxi) Flush() {
 	v.Layer.Flush()
+}
+
+// SetParent sets a parent middleware layer.
+func (v *Vinxi) SetParent(parent layer.Middleware) {
+	v.Layer.SetParent(parent)
 }
 
 // BindServer binds the vinxi HTTP handler to the given http.Server.
@@ -135,7 +134,12 @@ func (v *Vinxi) BindServer(server *http.Server) {
 	server.Handler = v
 }
 
-// ServeHTTP implements the required http.Handler interface.
-func (v *Vinxi) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	v.Layer.Run("request", w, req, nil)
+// ServeHTTP implements the required http.Handler interface to handle incoming traffic.
+func (v *Vinxi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Expose original request host
+	context.Set(r, "vinxi.host", r.Host)
+	// Define target URL
+	r.URL.Host = r.Host
+	// Run the incoming request middleware layer
+	v.Layer.Run("request", w, r, nil)
 }

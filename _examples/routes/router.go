@@ -2,32 +2,34 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/vinxi/vinxi.v0"
-	"gopkg.in/vinxi/vinxi.v0/route"
 	"net/http"
+
+	"gopkg.in/vinxi/vinxi.v0"
 )
 
 func main() {
-	fmt.Printf("Server listening on port: %d\n", 3100)
 	vs := vinxi.NewServer(vinxi.ServerOptions{Host: "localhost", Port: 3100})
+	v := vs.Vinxi
 
-	r := route.New("/")
-
-	r.Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
+	v.Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
 		w.Header().Set("Server", "vinxi")
 		h.ServeHTTP(w, r)
 	})
 
-	r.UseError(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
+	v.UsePhase("error", func(w http.ResponseWriter, r *http.Request, h http.Handler) {
 		w.Header().Set("Server", "vinxi")
 		w.WriteHeader(500)
 		w.Write([]byte("server error"))
 	})
 
-	r.Forward("http://localhost:8080")
+	v.Get("/ip").Forward("http://httpbin.org")
+	v.Get("/headers").Forward("http://httpbin.org")
+	v.Get("/image/:name").Forward("http://httpbin.org")
+	v.All("/post").Forward("http://httpbin.org")
 
-	vs.Vinci.Use(r)
+	v.Forward("http://example.com")
 
+	fmt.Printf("Server listening on port: %d\n", 3100)
 	err := vs.Listen()
 	if err != nil {
 		fmt.Errorf("Error: %s\n", err)

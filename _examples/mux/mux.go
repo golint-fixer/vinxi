@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/vinxi/mux.v0"
-	"gopkg.in/vinxi/vinxi.v0"
-	"gopkg.in/vinxi/vinxi.v0/middleware/forward"
-	"gopkg.in/vinxi/vinxi.v0/route"
 	"net/http"
+
+	"gopkg.in/vinxi/forward.v0"
+	"gopkg.in/vinxi/mux.v0"
+	"gopkg.in/vinxi/router.v0"
+	"gopkg.in/vinxi/vinxi.v0"
 )
 
 func main() {
@@ -21,7 +22,7 @@ func main() {
 		h.ServeHTTP(w, r)
 	})
 
-	m.Use(route.New("/foo").Handler(func(w http.ResponseWriter, req *http.Request) {
+	m.Use(router.NewRoute("/foo").Handler(func(w http.ResponseWriter, req *http.Request) {
 		w.Write([]byte("foo bar"))
 	}))
 
