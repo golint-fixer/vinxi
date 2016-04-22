@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	vs := vinxi.NewServer(vinxi.ServerOptions{Host: "localhost", Port: 3100})
+	vs := vinxi.NewServer(vinxi.ServerOptions{Port: 3100})
 
 	// Forward all the traffic to httpbin.org
 	vs.Forward("http://httpbin.org")

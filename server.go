@@ -32,7 +32,7 @@ type ServerOptions struct {
 // and easy set up using Vinxi.
 type Server struct {
 	// Vinxi stores the Vinxi layer instance.
-	Vinxi *Vinxi
+	*Vinxi
 
 	// Server stores the http.Server instance.
 	Server *http.Server
