@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	vs := vinxi.NewServer(vinxi.ServerOptions{Host: "localhost", Port: 3100})
+	vs := vinxi.NewServer(vinxi.ServerOptions{Port: 3100})
 	v := vs.Vinxi
 
 	v.Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {

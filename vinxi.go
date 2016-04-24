@@ -6,6 +6,7 @@ import (
 	"gopkg.in/vinxi/context.v0"
 	"gopkg.in/vinxi/forward.v0"
 	"gopkg.in/vinxi/layer.v0"
+	"gopkg.in/vinxi/mux.v0"
 	"gopkg.in/vinxi/router.v0"
 )
 
@@ -122,6 +123,16 @@ func (v *Vinxi) SetForwader(fn http.Handler) *Vinxi {
 // Flush flushes all the middleware stack.
 func (v *Vinxi) Flush() {
 	v.Layer.Flush()
+}
+
+// Mux creates a new multiplexer based on the given matcher functions.
+func (v *Vinxi) Mux(matchers ...mux.Matcher) *mux.Mux {
+	m := mux.New()
+	// Register matchers
+	m.If(matchers...)
+	// Bind multiplexer to the current vinxi layer
+	v.Use(m)
+	return m
 }
 
 // SetParent sets a parent middleware layer.

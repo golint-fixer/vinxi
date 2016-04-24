@@ -82,22 +82,9 @@ func (s *Server) Forward(uri string) *Server {
 	return s
 }
 
-// Use attaches a new middleware handler for incoming HTTP traffic.
-func (s *Server) Use(handler interface{}) *Server {
-	s.Vinxi.Use(handler)
-	return s
-}
-
-// UsePhase attaches a new middleware handler to a specific phase.
-func (s *Server) UsePhase(phase string, handler interface{}) *Server {
-	s.Vinxi.UsePhase(phase, handler)
-	return s
-}
-
-// UseFinalHandler uses a new middleware handler function as final handler.
-func (s *Server) UseFinalHandler(fn http.Handler) *Server {
-	s.Vinxi.UseFinalHandler(fn)
-	return s
+// Proxy returns the vinxi proxy instance.
+func (s *Server) Proxy(handler interface{}) *Vinxi {
+	return s.Vinxi
 }
 
 // Listen starts listening on network.
