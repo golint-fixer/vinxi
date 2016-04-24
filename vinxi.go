@@ -140,6 +140,13 @@ func (v *Vinxi) SetParent(parent layer.Middleware) {
 	v.Layer.SetParent(parent)
 }
 
+// Server creates a new http.Server.
+func (v *Vinxi) Server(opts ServerOptions) *Server {
+	srv := NewServer(opts)
+	v.BindServer(srv.Server)
+	return srv
+}
+
 // BindServer binds the vinxi HTTP handler to the given http.Server.
 func (v *Vinxi) BindServer(server *http.Server) {
 	server.Handler = v

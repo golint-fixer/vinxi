@@ -82,7 +82,7 @@ func (s *Server) Forward(uri string) *Server {
 	return s
 }
 
-// Proxy returns the vinxi proxy instance.
+// Proxy returns the vinxi proxy instance assigned to the current server.
 func (s *Server) Proxy(handler interface{}) *Vinxi {
 	return s.Vinxi
 }
