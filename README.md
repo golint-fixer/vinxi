@@ -6,14 +6,14 @@
 
 ## Features
 
-- Simple, idiomatic, hackable API.
-- Designed for strong composability and extensibility.
-- Fully middleware-oriented.
-- Built on top of `net/http`.
-- Built-in (but optional) HTTP router and multiplexer.
-- Great interpolarity with standard `net/http` interfaces
-- Great convergence with third-party HTTP interfaces (Gorilla, Negroni, Alice...).
-- Small core and code base.
+- Strong modularity via hirarchical middleware layer.
+- Multiple middleware interfaces supported (e.g: http.Handler, Negroni, Alice...)
+- Built-in multiplexer for easy composition.
+- Idiomatic built on top of `net/http` package.
+- Default HTTP/S and WebSocket traffic forward.
+- Built-in middleware components (e.g: logging, metrics, service discovery, balancer...).
+- Tiny, hackable core.
+- Completely written in Go. No dependencies.
 
 ## Installation
 
@@ -46,6 +46,27 @@ See [godoc reference](https://godoc.org/github.com/vinxi/vinxi) for detailed API
 
 See [examples](https://github.com/vinxi/vinxi/tree/master/_examples) directory.
 
+## Command-line interface
+
+See [vinxictl](https://github.com/vinxi/vinxictl) for command-line usage.
+
+## Development
+
+Clone the repository:
+```bash
+git clone https://github.com/vinxi/vinxi.git && cd vinxi
+```
+
+Create subpackages symbolic links in `$GOPATH`:
+```bash
+make link
+```
+
+Lint, format and run tests:
+```bash
+make 
+```
+
 ## License
 
-[Apache License](https://opensource.org/licenses/Apache-2.0) 2.0 and [MIT License](https://opensource.org/licenses/MIT).
+Mixed [Apache License](https://opensource.org/licenses/Apache-2.0) 2.0 and [MIT License](https://opensource.org/licenses/MIT) (see file header for details).
