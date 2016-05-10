@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/vinxi/router.v0"
 	"gopkg.in/vinxi/vinxi.v0"
+	"gopkg.in/vinxi/vinxi.v0/router"
 	"net/http"
 )
 

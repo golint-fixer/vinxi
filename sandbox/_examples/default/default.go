@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"gopkg.in/vinxi/sandbox.v0"
-	"gopkg.in/vinxi/sandbox.v0/plugins/static"
-	"gopkg.in/vinxi/sandbox.v0/rules"
 	"gopkg.in/vinxi/vinxi.v0"
+	"gopkg.in/vinxi/vinxi.v0/sandbox"
+	"gopkg.in/vinxi/vinxi.v0/sandbox/plugins/static"
+	"gopkg.in/vinxi/vinxi.v0/sandbox/rules"
 )
 
 const port = 3100

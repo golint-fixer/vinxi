@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/vinxi/mux.v0"
-	"gopkg.in/vinxi/router.v0"
 	"gopkg.in/vinxi/vinxi.v0"
+	"gopkg.in/vinxi/vinxi.v0/mux"
+	"gopkg.in/vinxi/vinxi.v0/router"
 	"net/http"
 )
 

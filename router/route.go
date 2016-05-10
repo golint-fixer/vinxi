@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"gopkg.in/vinxi/forward.v0"
-	"gopkg.in/vinxi/layer.v0"
+	"gopkg.in/vinxi/vinxi.v0/forward"
+	"gopkg.in/vinxi/vinxi.v0/layer"
 )
 
 // DefaultForwarder stores the default http.Handler to be used to forward the traffic.

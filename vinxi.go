@@ -3,11 +3,11 @@ package vinxi
 import (
 	"net/http"
 
-	"gopkg.in/vinxi/context.v0"
-	"gopkg.in/vinxi/forward.v0"
-	"gopkg.in/vinxi/layer.v0"
-	"gopkg.in/vinxi/mux.v0"
-	"gopkg.in/vinxi/router.v0"
+	"gopkg.in/vinxi/vinxi.v0/context"
+	"gopkg.in/vinxi/vinxi.v0/forward"
+	"gopkg.in/vinxi/vinxi.v0/layer"
+	"gopkg.in/vinxi/vinxi.v0/mux"
+	"gopkg.in/vinxi/vinxi.v0/router"
 )
 
 // DefaultForwarder stores the default http.Handler to be used to forward the traffic.

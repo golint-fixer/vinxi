@@ -3,7 +3,7 @@ package static
 import (
 	"net/http"
 
-	"gopkg.in/vinxi/sandbox.v0"
+	"gopkg.in/vinxi/vinxi.v0/sandbox"
 )
 
 // New creates a new static plugin who serves

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/dchest/uniuri"
-	"gopkg.in/vinxi/layer.v0"
+	"gopkg.in/vinxi/vinxi.v0/layer"
 )
 
 type Handler func(http.Handler) http.Handler
