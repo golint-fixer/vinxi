@@ -3,8 +3,9 @@
 package mux
 
 import (
-	"gopkg.in/vinxi/vinxi.v0/layer"
 	"net/http"
+
+	"gopkg.in/vinxi/vinxi.v0/layer"
 )
 
 // Mux is a HTTP request/response/error multiplexer who implements both

@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"gopkg.in/vinxi/vinxi.v0"
-	"gopkg.in/vinxi/vinxi.v0/sandbox"
-	"gopkg.in/vinxi/vinxi.v0/sandbox/plugins/static"
-	"gopkg.in/vinxi/vinxi.v0/sandbox/rules"
+	"gopkg.in/vinxi/vinxi.v0/manager"
+	"gopkg.in/vinxi/vinxi.v0/manager/plugins/static"
+	"gopkg.in/vinxi/vinxi.v0/manager/rules"
 )
 
 const port = 3100
@@ -19,13 +19,13 @@ func main() {
 	v := vinxi.New()
 
 	// Manage current vinxi instance
-	manager := sandbox.Manage(v)
+	manager := manager.Manage(v)
 	scope := manager.NewScope(rules.NewPath("/foo"))
 	scope.UsePlugin(static.New(cwd))
 
 	go func() {
 		fmt.Printf("Admin server listening on port: %d\n", port+100)
-		manager.ServeAndListen(sandbox.ServerOptions{Port: port + 100})
+		manager.ServeAndListen(manager.ServerOptions{Port: port + 100})
 	}()
 
 	// Target server to forward

@@ -4,6 +4,7 @@ package layer
 
 import (
 	"net/http"
+	"sync"
 
 	"gopkg.in/vinxi/context.v0"
 )
@@ -64,6 +65,8 @@ type Pool map[string]*Stack
 // Layer type represent an HTTP domain
 // specific middleware layer with hieritance support.
 type Layer struct {
+	// RWMutex is used to provide thread-safe sync to the middleware store.
+	sync.RWMutex
 	// finalHandler stores the final middleware chain handler.
 	finalHandler http.Handler
 	// parent stores the parent middleware layer to use. Use SetParent(parent).
@@ -79,7 +82,9 @@ func New() *Layer {
 
 // Flush flushes the middleware pool.
 func (s *Layer) Flush() {
+	// s.mutex.Lock()
 	s.Pool = make(Pool)
+	// s.mutex.Unlock()
 }
 
 // Use registers new handlers for the given phase in the middleware stack.
@@ -105,18 +110,24 @@ func (s *Layer) SetParent(parent Middleware) {
 	s.parent = parent
 }
 
-// use is used internally to register one or multiple middleware handlers
-// in the middleware pool in the given phase and ordered by the given priority.
-func (s *Layer) use(phase string, priority Priority, handler ...interface{}) *Layer {
+// getStack is used to return the phase specific
+// middleware functions stack.
+func (s *Layer) getStack(phase string) *Stack {
+	s.Lock()
+	defer s.Unlock()
 	if s.Pool[phase] == nil {
 		s.Pool[phase] = &Stack{}
 	}
+	return s.Pool[phase]
+}
 
-	stack := s.Pool[phase]
+// use is used internally to register one or multiple middleware handlers
+// in the middleware pool in the given phase and ordered by the given priority.
+func (s *Layer) use(phase string, priority Priority, handler ...interface{}) *Layer {
+	stack := s.getStack(phase)
 	for _, h := range handler {
 		register(s, stack, priority, h)
 	}
-
 	return s
 }
 
@@ -127,6 +138,10 @@ func register(layer *Layer, stack *Stack, priority Priority, handler interface{}
 		r.Register(layer)
 		return
 	}
+
+	// Protect stack mutation
+	layer.Lock()
+	defer layer.Unlock()
 
 	// Otherwise infer the function interface
 	mw := AdaptFunc(handler)
@@ -166,6 +181,9 @@ func (s *Layer) Run(phase string, w http.ResponseWriter, r *http.Request, h http
 
 // run runs the current layer middleware chain for the given phase.
 func (s *Layer) run(phase string, w http.ResponseWriter, r *http.Request, h http.Handler) {
+	s.RLock()
+	defer s.RUnlock()
+
 	// Use default final handler if no one is passed
 	if h == nil {
 		h = s.finalHandler

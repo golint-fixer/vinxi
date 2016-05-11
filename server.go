@@ -82,11 +82,6 @@ func (s *Server) Forward(uri string) *Server {
 	return s
 }
 
-// Proxy returns the vinxi proxy instance assigned to the current server.
-func (s *Server) Proxy(handler interface{}) *Vinxi {
-	return s.Vinxi
-}
-
 // Listen starts listening on network.
 func (s *Server) Listen() error {
 	if s.Options.CertFile != "" && s.Options.KeyFile != "" {

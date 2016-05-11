@@ -147,7 +147,8 @@ func (v *Vinxi) NewServer(opts ServerOptions) *Server {
 	return srv
 }
 
-// ServeAndListen creates a new http.Server and starts listening on the network.
+// ServeAndListen creates a new http.Server and starts listening
+// on the network based on the given server options.
 func (v *Vinxi) ServeAndListen(opts ServerOptions) (*Server, error) {
 	srv := NewServer(opts)
 	v.BindServer(srv.Server)
@@ -161,7 +162,7 @@ func (v *Vinxi) BindServer(server *http.Server) {
 
 // ServeHTTP implements the required http.Handler interface to handle incoming traffic.
 func (v *Vinxi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Expose original request host
+	// Expose original incoming request host
 	context.Set(r, "vinxi.host", r.Host)
 	// Define target URL
 	r.URL.Host = r.Host

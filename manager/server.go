@@ -1,4 +1,4 @@
-package sandbox
+package manager
 
 import (
 	"net/http"

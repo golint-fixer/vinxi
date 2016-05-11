@@ -1,3 +1,3 @@
-package sandbox
+package manager
 
 // Nothing for now...

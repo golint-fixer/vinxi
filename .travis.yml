@@ -7,9 +7,6 @@ go:
 
 before_install:
   - go get -u github.com/nbio/st
-  - go get -u gopkg.in/vinxi/layer.v0
-  - go get -u gopkg.in/vinxi/forward.v0
-  - go get -u gopkg.in/vinxi/context.v0
   - go get -u -v github.com/axw/gocov/gocov
   - go get -u -v github.com/mattn/goveralls
   - go get -u -v github.com/golang/lint/golint
@@ -19,6 +16,7 @@ script:
   - diff -u <(echo -n) <(go vet ./...)
   - diff -u <(echo -n) <(golint ./...)
   - go test -v -race ./...
+  # TODO: generate package-specific coverage
   - go test -v -race -covermode=atomic -coverprofile=coverage.out
 
 after_success:

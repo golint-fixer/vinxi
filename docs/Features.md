@@ -9,9 +9,8 @@
 
 ## Upcoming features
 
-- Admin HTTP API with dynamic configuration
+- Admin HTTP API supporting dynamic configuration
 - Admin web UI
 - CLI interface
 - Dynamic configuration from multiple backends.
-- Full-featured sandbox proxy.
 - Plugin ecosystem.
