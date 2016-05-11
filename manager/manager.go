@@ -24,7 +24,7 @@ type Rule interface {
 	ID() string
 	Name() string
 	Description() string
-	// Options() Options
+	Options() Options
 	JSONConfig() string
 	Match(*http.Request) bool
 }
@@ -83,15 +83,29 @@ func (s *Scope) HandleHTTP(h http.Handler) func(http.ResponseWriter, *http.Reque
 }
 
 type Manager struct {
-	Server   *http.Server
-	instance *vinxi.Vinxi
-	scopes   []*Scope
+	Server    *http.Server
+	scopes    []*Scope
+	instances []*vinxi.Vinxi
 }
 
-func Manage(instance *vinxi.Vinxi) *Manager {
-	m := &Manager{instance: instance}
-	instance.Layer.UsePriority("request", layer.Tail, m)
+func New() *Manager {
+	return &Manager{}
+}
+
+func Manage(instances ...*vinxi.Vinxi) *Manager {
+	m := New()
+	m.Manage(instances...)
+
+	// Register handlers
+	for _, instance := range instances {
+		instance.Layer.UsePriority("request", layer.Tail, m)
+	}
+
 	return m
+}
+
+func (m *Manager) Manage(instances ...*vinxi.Vinxi) {
+	m.instances = append(m.instances, instances...)
 }
 
 func (m *Manager) NewScope(rules ...Rule) *Scope {
@@ -103,7 +117,7 @@ func (m *Manager) NewScope(rules ...Rule) *Scope {
 func (m *Manager) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Handler) {
 	next := h
 
-	for _, scope := range a.scopes {
+	for _, scope := range m.scopes {
 		next = http.HandlerFunc(scope.HandleHTTP(next))
 	}
 
@@ -132,19 +146,19 @@ type JSONScope struct {
 }
 
 func (m *Manager) ServeAndListen(opts ServerOptions) (*http.Server, error) {
-	a.Server = NewServer(opts)
+	m.Server = NewServer(opts)
 
-	m := pat.New()
-	a.Server.Handler = m
+	pat := pat.New()
+	m.Server.Handler = pat
 
 	// Define route handlers
-	m.Get("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		io.WriteString(w, "vinxi HTTP API manager "+Version)
+	pat.Get("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		io.WriteString(w, "vinxi HTTP API manager "+vinxi.Version)
 	}))
 
-	m.Get("/scopes", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	pat.Get("/scopes", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		buf := &bytes.Buffer{}
-		scopes := createScopes(a.scopes)
+		scopes := createScopes(m.scopes)
 
 		err := json.NewEncoder(buf).Encode(scopes)
 		if err != nil {
@@ -156,11 +170,11 @@ func (m *Manager) ServeAndListen(opts ServerOptions) (*http.Server, error) {
 		w.Write(buf.Bytes())
 	}))
 
-	m.Get("/scopes/:scope", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	pat.Get("/scopes/:scope", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		id := req.URL.Query().Get(":scope")
 
 		// Find scope by ID
-		for _, scope := range a.scopes {
+		for _, scope := range m.scopes {
 			if scope.ID == id {
 				data, err := encodeJSON(createScope(scope))
 				if err != nil {
@@ -177,7 +191,7 @@ func (m *Manager) ServeAndListen(opts ServerOptions) (*http.Server, error) {
 		w.Write([]byte("not found"))
 	}))
 
-	return a.Server, Listen(a.Server, opts)
+	return m.Server, Listen(m.Server, opts)
 }
 
 func encodeJSON(data interface{}) ([]byte, error) {
