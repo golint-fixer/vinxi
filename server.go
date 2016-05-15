@@ -22,7 +22,7 @@ type ServerOptions struct {
 	Port         int
 	ReadTimeout  int
 	WriteTimeout int
-	Host         string
+	Addr         string
 	Forward      string
 	CertFile     string
 	KeyFile      string
@@ -54,7 +54,7 @@ func NewServer(o ServerOptions) *Server {
 		o.WriteTimeout = DefaultWriteTimeout
 	}
 
-	addr := o.Host + ":" + strconv.Itoa(o.Port)
+	addr := o.Addr + ":" + strconv.Itoa(o.Port)
 	svr := &http.Server{
 		Addr:           addr,
 		MaxHeaderBytes: 1 << 20,
