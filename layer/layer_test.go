@@ -2,6 +2,7 @@ package layer
 
 import (
 	"net/http"
+	"sync"
 	"testing"
 
 	"github.com/nbio/st"
@@ -172,6 +173,38 @@ func TestSimpleMiddlewareCallChain(t *testing.T) {
 
 	mw.Run("request", wrt, req, final)
 	st.Expect(t, calls, 4)
+}
+
+func TestConcurrentRegistration(t *testing.T) {
+	var wg sync.WaitGroup
+	mw := New()
+
+	fn := func(w http.ResponseWriter, r *http.Request, h http.Handler) {
+		w.Header().Set("foo", w.Header().Get("foo")+"bar")
+		h.ServeHTTP(w, r)
+	}
+
+	var called bool
+	final := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+	})
+
+	max := 10
+	wg.Add(max)
+
+	for i := 0; i < max; i += 1 {
+		go (func() {
+			mw.Use(RequestPhase, fn)
+			wg.Done()
+		})()
+	}
+	wg.Wait()
+
+	wrt := utils.NewWriterStub()
+	mw.Run("request", wrt, &http.Request{}, final)
+
+	st.Expect(t, wrt.Header().Get("foo"), "barbarbarbarbarbarbarbarbarbar")
+	st.Expect(t, called, true)
 }
 
 func TestFlush(t *testing.T) {
