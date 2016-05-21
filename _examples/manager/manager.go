@@ -24,7 +24,8 @@ func main() {
 	go mgr.ServeDefault()
 
 	// Register scopes
-	scope := mgr.NewScope(rules.Path("/?"))
+	scope := mgr.NewScope("default", "Default scope")
+	scope.UseRule(rules.Path("/"))
 	scope.UsePlugin(static.New("/Users/h2non/Projects/vinxi"))
 
 	// Registers a simple middleware handler

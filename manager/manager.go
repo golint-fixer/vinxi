@@ -12,71 +12,6 @@ import (
 	"gopkg.in/vinxi/vinxi.v0/layer"
 )
 
-type Layer struct {
-	layer *layer.Layer
-}
-
-type Rule interface {
-	ID() string
-	Name() string
-	Description() string
-	JSONConfig() string
-	Match(*http.Request) bool
-}
-
-type Scope struct {
-	disabled bool
-	rules    []Rule
-	plugins  *PluginLayer
-
-	ID          string
-	Name        string
-	Description string
-}
-
-func NewScope(rules ...Rule) *Scope {
-	return &Scope{ID: uniuri.New(), Name: "default", plugins: NewPluginLayer(), rules: rules}
-}
-
-func (s *Scope) UsePlugin(plugin Plugin) {
-	s.plugins.Use(plugin)
-}
-
-func (s *Scope) AddRule(rules ...Rule) {
-	s.rules = append(s.rules, rules...)
-}
-
-func (s *Scope) Rules() []Rule {
-	return s.rules
-}
-
-func (s *Scope) Disable() {
-	s.disabled = true
-}
-
-func (s *Scope) Enable() {
-	s.disabled = false
-}
-
-func (s *Scope) HandleHTTP(h http.Handler) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if s.disabled {
-			h.ServeHTTP(w, r)
-			return
-		}
-
-		for _, rule := range s.rules {
-			if !rule.Match(r) {
-				// Continue
-				h.ServeHTTP(w, r)
-				return
-			}
-		}
-
-		s.plugins.Run(w, r, h)
-	}
-}
-
 type VinxiInstance struct {
 	ID          string `json:"id"`
 	Name        string `json:"name,omitempty"`
@@ -125,13 +60,22 @@ func (m *Manager) ServeDefault() (*http.Server, error) {
 	return m.ListenAndServe(ServerOptions{})
 }
 
-// NewScope creates a new
-func (m *Manager) NewScope(rules ...Rule) *Scope {
-	scope := NewScope(rules...)
+// NewScope creates a new scope based on the given name
+// and optional description.
+func (m *Manager) NewScope(name, description string) *Scope {
+	scope := NewScope(name, description)
 	m.scopes = append(m.scopes, scope)
 	return scope
 }
 
+// NewScope creates a new default scope.
+func (m *Manager) NewDefaultScope(rules ...Rule) *Scope {
+	scope := m.NewScope("default", "Default generic scope")
+	scope.UseRule(rules...)
+	return scope
+}
+
+// HandleHTTP is triggered by the vinxi middleware layer on incoming HTTP request.
 func (m *Manager) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Handler) {
 	next := h
 
@@ -140,6 +84,19 @@ func (m *Manager) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Hand
 	}
 
 	next.ServeHTTP(w, r)
+}
+
+func (m *Manager) Configure() error {
+	router := httprouter.New()
+	m.Server.Handler = router
+
+	// Define route handlers
+	for _, r := range routes {
+		r.Manager = m // Expose manager instance in routes
+		router.Handler(r.Method, r.Path, r)
+	}
+
+	return nil
 }
 
 type JSONRule struct {
@@ -190,6 +147,16 @@ func AddRoute(method, path string, fn ControllerHandler) {
 func init() {
 	AddRoute("GET", "/", func(w http.ResponseWriter, req *http.Request, c *Controller) {
 		io.WriteString(w, "vinxi HTTP API manager "+vinxi.Version)
+	})
+
+	AddRoute("GET", "/version", func(w http.ResponseWriter, req *http.Request, c *Controller) {
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, `{"vinxi": "`+vinxi.Version+`"}`)
+	})
+
+	AddRoute("GET", "/health", func(w http.ResponseWriter, req *http.Request, c *Controller) {
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, "{}")
 	})
 
 	AddRoute("GET", "/catalog", func(w http.ResponseWriter, req *http.Request, c *Controller) {
@@ -291,19 +258,6 @@ func init() {
 		w.WriteHeader(404)
 		w.Write([]byte("not found"))
 	})
-}
-
-func (m *Manager) Configure() error {
-	router := httprouter.New()
-	m.Server.Handler = router
-
-	// Define route handlers
-	for _, r := range routes {
-		r.Manager = m // Expose manager instance via routes
-		router.Handler(r.Method, r.Path, r)
-	}
-
-	return nil
 }
 
 func encodeJSON(data interface{}) ([]byte, error) {

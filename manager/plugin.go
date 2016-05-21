@@ -7,6 +7,7 @@ import (
 	"gopkg.in/vinxi/vinxi.v0/layer"
 )
 
+// Handler represents the plugin specific HTTP handler function interface.
 type Handler func(http.Handler) http.Handler
 
 // Plugin represents the required interface implemented by plugins.
