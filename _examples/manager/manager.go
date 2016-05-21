@@ -17,13 +17,14 @@ func main() {
 	v := vinxi.New()
 
 	// Creates a new manager for the vinxi proxy
-	mgr := manager.New(v)
+	mgr := manager.New()
+	mgr.Manage("default", "This a default server instance", v)
 
 	// Starts default admin HTTP server
 	go mgr.ServeDefault()
 
 	// Register scopes
-	scope := mgr.NewScope(rules.Path("/"))
+	scope := mgr.NewScope(rules.Path("/?"))
 	scope.UsePlugin(static.New("/Users/h2non/Projects/vinxi"))
 
 	// Registers a simple middleware handler
@@ -36,7 +37,7 @@ func main() {
 	v.Forward("http://httpbin.org")
 
 	fmt.Printf("Server listening on port: %d\n", port)
-	_, err := v.ServeAndListen(vinxi.ServerOptions{Port: port})
+	_, err := v.ListenAndServe(vinxi.ServerOptions{Port: port})
 	if err != nil {
 		fmt.Errorf("Error: %s\n", err)
 	}

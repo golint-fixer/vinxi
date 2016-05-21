@@ -6,8 +6,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/bmizerany/pat"
 	"github.com/dchest/uniuri"
+	"github.com/julienschmidt/httprouter"
 	"gopkg.in/vinxi/vinxi.v0"
 	"gopkg.in/vinxi/vinxi.v0/layer"
 )
@@ -77,35 +77,43 @@ func (s *Scope) HandleHTTP(h http.Handler) func(http.ResponseWriter, *http.Reque
 	}
 }
 
+type VinxiInstance struct {
+	ID          string `json:"id"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+	scopes      []*Scope
+	instance    *vinxi.Vinxi
+}
+
 type Manager struct {
 	Server    *http.Server
+	plugins   *PluginLayer
 	scopes    []*Scope
-	instances []*vinxi.Vinxi
+	instances []*VinxiInstance
 }
 
-func New(instances ...*vinxi.Vinxi) *Manager {
-	return &Manager{instances: instances}
+func New() *Manager {
+	return &Manager{plugins: NewPluginLayer()}
 }
 
-func Manage(instances ...*vinxi.Vinxi) *Manager {
+func Manage(name, description string, proxy *vinxi.Vinxi) *Manager {
 	m := New()
-	m.Manage(instances...)
-
-	// Register handlers
-	for _, instance := range instances {
-		instance.Layer.UsePriority("request", layer.Tail, m)
-	}
-
+	m.Manage(name, description, proxy)
 	return m
 }
 
-func (m *Manager) Manage(instances ...*vinxi.Vinxi) {
-	m.instances = append(m.instances, instances...)
+func (m *Manager) Manage(name, description string, proxy *vinxi.Vinxi) {
+	// Register manager middleware in the proxy
+	proxy.Layer.UsePriority("request", layer.Tail, m)
+
+	// Register the managed Vinxi instance
+	instance := &VinxiInstance{ID: uniuri.New(), Name: name, Description: description, instance: proxy}
+	m.instances = append(m.instances, instance)
 }
 
-// ServeAndListen creates a new admin HTTP server and starts listening on
+// ListenAndServe creates a new admin HTTP server and starts listening on
 // the network based on the given server options.
-func (m *Manager) ServeAndListen(opts ServerOptions) (*http.Server, error) {
+func (m *Manager) ListenAndServe(opts ServerOptions) (*http.Server, error) {
 	m.Server = NewServer(opts)
 	m.Configure()
 	return m.Server, Listen(m.Server, opts)
@@ -114,7 +122,7 @@ func (m *Manager) ServeAndListen(opts ServerOptions) (*http.Server, error) {
 // ServeDefault creates a new admin HTTP server and starts listening
 // on the network based on the default server settings.
 func (m *Manager) ServeDefault() (*http.Server, error) {
-	return m.ServeAndListen(ServerOptions{})
+	return m.ListenAndServe(ServerOptions{})
 }
 
 // NewScope creates a new
@@ -184,6 +192,71 @@ func init() {
 		io.WriteString(w, "vinxi HTTP API manager "+vinxi.Version)
 	})
 
+	AddRoute("GET", "/catalog", func(w http.ResponseWriter, req *http.Request, c *Controller) {
+		io.WriteString(w, "Catalog here...")
+	})
+
+	AddRoute("GET", "/catalog/plugins", func(w http.ResponseWriter, req *http.Request, c *Controller) {
+		io.WriteString(w, "Plugin catalog here...")
+	})
+
+	AddRoute("GET", "/catalog/scopes", func(w http.ResponseWriter, req *http.Request, c *Controller) {
+		io.WriteString(w, "Scopes catalog here...")
+	})
+
+	AddRoute("GET", "/instances", func(w http.ResponseWriter, req *http.Request, c *Controller) {
+		buf := &bytes.Buffer{}
+
+		err := json.NewEncoder(buf).Encode(c.Manager.instances)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		w.Write(buf.Bytes())
+	})
+
+	AddRoute("GET", "/instances/:instance", func(w http.ResponseWriter, req *http.Request, c *Controller) {
+		buf := &bytes.Buffer{}
+		id := req.URL.Query().Get(":instance")
+
+		mgr := c.Manager
+		for _, instance := range mgr.instances {
+			if instance.ID == id || instance.Name == id {
+				scopes := createScopes(instance.scopes)
+
+				err := json.NewEncoder(buf).Encode(scopes)
+				if err != nil {
+					w.WriteHeader(500)
+					w.Write([]byte(err.Error()))
+					return
+				}
+
+				w.Write(buf.Bytes())
+				return
+			}
+		}
+
+		w.WriteHeader(404)
+		w.Write([]byte("Not found"))
+		return
+	})
+
+	AddRoute("GET", "/plugins", func(w http.ResponseWriter, req *http.Request, c *Controller) {
+		buf := &bytes.Buffer{}
+		scopes := createScopes(c.Manager.scopes)
+
+		err := json.NewEncoder(buf).Encode(scopes)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		w.Write(buf.Bytes())
+	})
+
 	AddRoute("GET", "/scopes", func(w http.ResponseWriter, req *http.Request, c *Controller) {
 		buf := &bytes.Buffer{}
 		scopes := createScopes(c.Manager.scopes)
@@ -221,13 +294,13 @@ func init() {
 }
 
 func (m *Manager) Configure() error {
-	pat := pat.New()
-	m.Server.Handler = pat
+	router := httprouter.New()
+	m.Server.Handler = router
 
 	// Define route handlers
 	for _, r := range routes {
 		r.Manager = m // Expose manager instance via routes
-		pat.Add(r.Method, r.Path, r)
+		router.Handler(r.Method, r.Path, r)
 	}
 
 	return nil

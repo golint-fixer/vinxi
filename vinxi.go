@@ -147,9 +147,9 @@ func (v *Vinxi) NewServer(opts ServerOptions) *Server {
 	return srv
 }
 
-// ServeAndListen creates a new http.Server and starts listening
+// ListenAndServe creates a new http.Server and starts listening
 // on the network based on the given server options.
-func (v *Vinxi) ServeAndListen(opts ServerOptions) (*Server, error) {
+func (v *Vinxi) ListenAndServe(opts ServerOptions) (*Server, error) {
 	srv := NewServer(opts)
 	v.BindServer(srv.Server)
 	return srv, srv.Listen()
