@@ -1,8 +1,9 @@
 package rules
 
 import (
-	"github.com/dchest/uniuri"
 	"net/http"
+
+	"github.com/dchest/uniuri"
 )
 
 type PathRule struct {
@@ -11,7 +12,7 @@ type PathRule struct {
 	disabled bool
 }
 
-func NewPath(path string) *PathRule {
+func Path(path string) *PathRule {
 	return &PathRule{id: uniuri.New(), path: path}
 }
 

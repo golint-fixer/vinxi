@@ -16,15 +16,10 @@ type Layer struct {
 	layer *layer.Layer
 }
 
-type Options struct {
-	Optional bool
-}
-
 type Rule interface {
 	ID() string
 	Name() string
 	Description() string
-	Options() Options
 	JSONConfig() string
 	Match(*http.Request) bool
 }
@@ -88,8 +83,8 @@ type Manager struct {
 	instances []*vinxi.Vinxi
 }
 
-func New() *Manager {
-	return &Manager{}
+func New(instances ...*vinxi.Vinxi) *Manager {
+	return &Manager{instances: instances}
 }
 
 func Manage(instances ...*vinxi.Vinxi) *Manager {
@@ -108,6 +103,21 @@ func (m *Manager) Manage(instances ...*vinxi.Vinxi) {
 	m.instances = append(m.instances, instances...)
 }
 
+// ServeAndListen creates a new admin HTTP server and starts listening on
+// the network based on the given server options.
+func (m *Manager) ServeAndListen(opts ServerOptions) (*http.Server, error) {
+	m.Server = NewServer(opts)
+	m.Configure()
+	return m.Server, Listen(m.Server, opts)
+}
+
+// ServeDefault creates a new admin HTTP server and starts listening
+// on the network based on the default server settings.
+func (m *Manager) ServeDefault() (*http.Server, error) {
+	return m.ServeAndListen(ServerOptions{})
+}
+
+// NewScope creates a new
 func (m *Manager) NewScope(rules ...Rule) *Scope {
 	scope := NewScope(rules...)
 	m.scopes = append(m.scopes, scope)
@@ -145,20 +155,38 @@ type JSONScope struct {
 	Plugins []JSONPlugin `json:"plugins,omitempty"`
 }
 
-func (m *Manager) ServeAndListen(opts ServerOptions) (*http.Server, error) {
-	m.Server = NewServer(opts)
+type ControllerHandler func(http.ResponseWriter, *http.Request, *Controller)
 
-	pat := pat.New()
-	m.Server.Handler = pat
+type Controller struct {
+	Path    string
+	Method  string
+	Manager *Manager
+	Handler ControllerHandler
+}
 
-	// Define route handlers
-	pat.Get("/", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+func (c *Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c.Handler(w, r, c)
+}
+
+var routes = []*Controller{}
+
+func AddRoute(method, path string, fn ControllerHandler) {
+	route := &Controller{
+		Path:    path,
+		Method:  method,
+		Handler: fn,
+	}
+	routes = append(routes, route)
+}
+
+func init() {
+	AddRoute("GET", "/", func(w http.ResponseWriter, req *http.Request, c *Controller) {
 		io.WriteString(w, "vinxi HTTP API manager "+vinxi.Version)
-	}))
+	})
 
-	pat.Get("/scopes", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	AddRoute("GET", "/scopes", func(w http.ResponseWriter, req *http.Request, c *Controller) {
 		buf := &bytes.Buffer{}
-		scopes := createScopes(m.scopes)
+		scopes := createScopes(c.Manager.scopes)
 
 		err := json.NewEncoder(buf).Encode(scopes)
 		if err != nil {
@@ -168,13 +196,13 @@ func (m *Manager) ServeAndListen(opts ServerOptions) (*http.Server, error) {
 		}
 
 		w.Write(buf.Bytes())
-	}))
+	})
 
-	pat.Get("/scopes/:scope", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	AddRoute("GET", "/scopes/:scope", func(w http.ResponseWriter, req *http.Request, c *Controller) {
 		id := req.URL.Query().Get(":scope")
 
 		// Find scope by ID
-		for _, scope := range m.scopes {
+		for _, scope := range c.Manager.scopes {
 			if scope.ID == id {
 				data, err := encodeJSON(createScope(scope))
 				if err != nil {
@@ -189,9 +217,20 @@ func (m *Manager) ServeAndListen(opts ServerOptions) (*http.Server, error) {
 
 		w.WriteHeader(404)
 		w.Write([]byte("not found"))
-	}))
+	})
+}
 
-	return m.Server, Listen(m.Server, opts)
+func (m *Manager) Configure() error {
+	pat := pat.New()
+	m.Server.Handler = pat
+
+	// Define route handlers
+	for _, r := range routes {
+		r.Manager = m // Expose manager instance via routes
+		pat.Add(r.Method, r.Path, r)
+	}
+
+	return nil
 }
 
 func encodeJSON(data interface{}) ([]byte, error) {

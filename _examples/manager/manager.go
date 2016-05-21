@@ -1,0 +1,43 @@
+package main
+
+import (
+	"fmt"
+	"net/http"
+
+	"gopkg.in/vinxi/vinxi.v0"
+	"gopkg.in/vinxi/vinxi.v0/manager"
+	"gopkg.in/vinxi/vinxi.v0/manager/plugins/static"
+	"gopkg.in/vinxi/vinxi.v0/manager/rules"
+)
+
+const port = 3100
+
+func main() {
+	// Creates a new vinxi proxy
+	v := vinxi.New()
+
+	// Creates a new manager for the vinxi proxy
+	mgr := manager.New(v)
+
+	// Starts default admin HTTP server
+	go mgr.ServeDefault()
+
+	// Register scopes
+	scope := mgr.NewScope(rules.Path("/"))
+	scope.UsePlugin(static.New("/Users/h2non/Projects/vinxi"))
+
+	// Registers a simple middleware handler
+	v.Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
+		w.Header().Set("Server", "vinxi")
+		h.ServeHTTP(w, r)
+	})
+
+	// Forward traffic to httpbin.org by default
+	v.Forward("http://httpbin.org")
+
+	fmt.Printf("Server listening on port: %d\n", port)
+	_, err := v.ServeAndListen(vinxi.ServerOptions{Port: port})
+	if err != nil {
+		fmt.Errorf("Error: %s\n", err)
+	}
+}

@@ -43,7 +43,7 @@ type plugin struct {
 // NewPlugin creates a new Plugin capable interface based on the
 // given HTTP handler logic encapsulated as plugin.
 func NewPlugin(name, description string, handler Handler) Plugin {
-	return &plugin{id: uniuri.New(), sname: name, description: description, handler: handler}
+	return &plugin{id: uniuri.New(), name: name, description: description, handler: handler}
 }
 
 // ID returns the plugin identifer.

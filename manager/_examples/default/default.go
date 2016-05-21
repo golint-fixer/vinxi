@@ -20,7 +20,7 @@ func main() {
 
 	// Manage current vinxi instance
 	manager := manager.Manage(v)
-	scope := manager.NewScope(rules.NewPath("/foo"))
+	scope := manager.NewScope(rules.Path("/foo"))
 	scope.UsePlugin(static.New(cwd))
 
 	go func() {
