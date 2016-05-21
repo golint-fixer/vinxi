@@ -27,3 +27,5 @@ _testmain.go
 *.iml
 *.out
 *.tmp
+
+benchmark/server
