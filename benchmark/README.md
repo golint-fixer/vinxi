@@ -23,14 +23,13 @@ Environment: OSX 10.11 2.7GHz 16GB
 ```
 Running 'simple' benchmark with concurrency 50
 Requests  [total]       1000
-Duration  [total, attack, wait]   19.98030457s, 19.979508728s, 795.842µs
-Latencies [mean, 50, 95, 99, max]   997.76µs, 706.233µs, 4.474003ms, 8.12996ms, 8.12996ms
-Bytes In  [total, mean]     11076, 11.08
+Duration  [total, attack, wait]   19.983667392s, 19.98306033s, 607.062µs
+Latencies [mean, 50, 95, 99, max]   729.278µs, 692.796µs, 988.518µs, 9.955522ms, 9.955522ms
+Bytes In  [total, mean]     12000, 12.00
 Bytes Out [total, mean]     0, 0.00
-Success   [ratio]       92.30%
-Status Codes  [code:count]      0:77  200:923  
+Success   [ratio]       100.00%
+Status Codes  [code:count]      200:1000  
 Error Set:
-Get http://localhost:8080: dial tcp 127.0.0.1:8080: connection refused
 ```
 
 ## License
