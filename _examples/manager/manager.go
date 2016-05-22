@@ -6,8 +6,8 @@ import (
 
 	"gopkg.in/vinxi/vinxi.v0"
 	"gopkg.in/vinxi/vinxi.v0/manager"
-	"gopkg.in/vinxi/vinxi.v0/manager/plugins/static"
-	"gopkg.in/vinxi/vinxi.v0/manager/rules"
+	"gopkg.in/vinxi/vinxi.v0/plugins/static"
+	"gopkg.in/vinxi/vinxi.v0/rules"
 )
 
 const port = 3100
