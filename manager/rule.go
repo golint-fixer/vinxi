@@ -4,72 +4,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/dchest/uniuri"
+	"gopkg.in/vinxi/vinxi.v0/rule"
 )
-
-// Rule represents the required interface implemented
-// by HTTP traffic rules.
-//
-// Rule is designed to inspect an incoming HTTP
-// traffic and determine if should trigger the registered
-// plugins if the rule matches.
-type Rule interface {
-	// ID returns the rule unique identifier.
-	ID() string
-	// Name returns the rule semantic alias.
-	Name() string
-	// Description is used to retrieve the rule semantic description.
-	Description() string
-	// Config is used to retrieve the rule config.
-	Config() Config
-	// Match is used to determine if a given http.Request
-	// passes the rule assertion.
-	Match(*http.Request) bool
-}
-
-type matcher func(*http.Request) bool
-
-type rule struct {
-	id, name, description string
-	matcher               matcher
-	config                Config
-}
-
-func (r *rule) ID() string {
-	return r.id
-}
-
-func (r *rule) Name() string {
-	return r.name
-}
-
-func (r *rule) Description() string {
-	return r.description
-}
-
-func (r *rule) Config() Config {
-	return r.config
-}
-
-func (r *rule) Match(req *http.Request) bool {
-	return r.matcher(req)
-}
-
-// NewRule creates a new rule entity based on the given matcher function.
-func NewRule(name, description string, matcher func(*http.Request) bool) *rule {
-	return NewRuleWithConfig(name, description, make(map[string]interface{}), matcher)
-}
-
-// NewRuleWithConfig creates a new rule entity based on the given config and matcher function.
-func NewRuleWithConfig(name, description string, config map[string]interface{}, matcher func(*http.Request) bool) *rule {
-	return &rule{
-		id:          uniuri.New(),
-		name:        name,
-		description: description,
-		matcher:     matcher,
-		config:      Config(config),
-	}
-}
 
 // RuleLayer represents a rules layer designed to intrument
 // proxies providing plugin based dynamic configuration
@@ -77,7 +13,7 @@ func NewRuleWithConfig(name, description string, config map[string]interface{}, 
 // enable/disable rules at runtime satefy.
 type RuleLayer struct {
 	rwm  sync.RWMutex
-	pool []Rule
+	pool []rule.Rule
 }
 
 // NewRuleLayer creates a new rules layer.
@@ -86,7 +22,7 @@ func NewRuleLayer() *RuleLayer {
 }
 
 // Use registers one or multiples plugins in the current rule layer.
-func (l *RuleLayer) Use(rule ...Rule) {
+func (l *RuleLayer) Use(rule ...rule.Rule) {
 	l.rwm.Lock()
 	l.pool = append(l.pool, rule...)
 	l.rwm.Unlock()

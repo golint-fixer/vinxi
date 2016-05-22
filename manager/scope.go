@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/dchest/uniuri"
+	"gopkg.in/vinxi/vinxi.v0/rule"
 )
 
 // Scope represents the HTTP configuration scope who can
@@ -35,7 +36,7 @@ func NewScope(name, description string) *Scope {
 }
 
 // UseRule registers one or multiple rules in the current scope.
-func (s *Scope) UseRule(rules ...Rule) {
+func (s *Scope) UseRule(rules ...rule.Rule) {
 	s.rules.Use(rules...)
 }
 

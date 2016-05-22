@@ -7,7 +7,7 @@ import (
 	"gopkg.in/vinxi/vinxi.v0"
 	"gopkg.in/vinxi/vinxi.v0/manager"
 	"gopkg.in/vinxi/vinxi.v0/plugins/static"
-	"gopkg.in/vinxi/vinxi.v0/rules"
+	"gopkg.in/vinxi/vinxi.v0/rule"
 )
 
 const port = 3100
@@ -25,7 +25,8 @@ func main() {
 
 	// Register scopes
 	scope := mgr.NewScope("default", "Default scope")
-	scope.UseRule(rules.Path("/(.*)"))
+	ruleFn := rule.Get("path")
+	scope.UseRule(ruleFn(map[string]interface{}{"path": "/(.*)"}))
 	scope.UsePlugin(static.New("/Users/h2non/Projects/vinxi"))
 
 	// Registers a simple middleware handler

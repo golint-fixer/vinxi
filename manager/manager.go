@@ -9,8 +9,12 @@ import (
 	"github.com/dchest/uniuri"
 	"github.com/julienschmidt/httprouter"
 	"gopkg.in/vinxi/vinxi.v0"
+	"gopkg.in/vinxi/vinxi.v0/config"
 	"gopkg.in/vinxi/vinxi.v0/layer"
-	"gopkg.in/vinxi/vinxi.v0/rules"
+	"gopkg.in/vinxi/vinxi.v0/rule"
+
+	// An empty import is required to load all the rules subpackages
+	_ "gopkg.in/vinxi/vinxi.v0/rules"
 )
 
 type VinxiInstance struct {
@@ -70,7 +74,7 @@ func (m *Manager) NewScope(name, description string) *Scope {
 }
 
 // NewScope creates a new default scope.
-func (m *Manager) NewDefaultScope(rules ...Rule) *Scope {
+func (m *Manager) NewDefaultScope(rules ...rule.Rule) *Scope {
 	scope := m.NewScope("default", "Default generic scope")
 	scope.UseRule(rules...)
 	return scope
@@ -101,10 +105,10 @@ func (m *Manager) Configure() error {
 }
 
 type JSONRule struct {
-	ID          string `json:"id"`
-	Name        string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	Config      Config `json:"config,omitempty"`
+	ID          string        `json:"id"`
+	Name        string        `json:"name,omitempty"`
+	Description string        `json:"description,omitempty"`
+	Config      config.Config `json:"config,omitempty"`
 }
 
 type JSONPlugin struct {
@@ -173,10 +177,13 @@ func init() {
 	})
 
 	AddRoute("GET", "/catalog/rules", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		for _, rule := range rules.Rules {
-
+		buf, err := json.Marshal(rule.Rules)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+			return
 		}
-		io.WriteString(w, "Scopes catalog here...")
+		w.Write(buf)
 	})
 
 	AddRoute("GET", "/instances", func(w http.ResponseWriter, req *http.Request, c *Controller) {

@@ -1,8 +1,9 @@
-package rules
+package path
 
 import (
 	"gopkg.in/vinxi/vinxi.v0/config"
 	"gopkg.in/vinxi/vinxi.v0/mux"
+	"gopkg.in/vinxi/vinxi.v0/rule"
 )
 
 const (
@@ -10,8 +11,8 @@ const (
 	pathRuleDescription = "Matches HTTP request URL path againts a given path pattern"
 )
 
-var pathConfig = Config{
-	ConfigType{
+var pathParams = rule.Params{
+	rule.Field{
 		Name:        "path",
 		Type:        "string",
 		Description: "Path expression to match",
@@ -19,30 +20,30 @@ var pathConfig = Config{
 	},
 }
 
-var pathRule = Rule{
+var pathRule = rule.Info{
 	Name:        pathRuleName,
 	Description: pathRuleDescription,
 	Factory:     pathFactory,
-	Config:      pathConfig,
+	Params:      pathParams,
 }
 
-func pathFactory(config config.Config) Rule {
-	return NewRuleWithConfig(
+func pathFactory(opts config.Config) rule.Rule {
+	return rule.NewRuleWithConfig(
 		pathRuleName,
 		pathRuleDescription,
-		config,
-		mux.MatchPath(config.GetString("path")),
+		opts,
+		mux.MatchPath(opts.GetString("path")),
 	)
 }
 
 // Path creates a new rule who filters the traffic
 // if matches with the following path expression.
 // Regular expressions is supported.
-func Path(path string) Rule {
+func Path(path string) rule.Rule {
 	config := map[string]interface{}{"path": path}
 	return pathFactory(config)
 }
 
 func init() {
-	Rules.Register(pathRule)
+	rule.Register(pathRule)
 }
