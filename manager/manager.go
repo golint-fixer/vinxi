@@ -10,6 +10,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"gopkg.in/vinxi/vinxi.v0"
 	"gopkg.in/vinxi/vinxi.v0/layer"
+	"gopkg.in/vinxi/vinxi.v0/rules"
 )
 
 type VinxiInstance struct {
@@ -168,6 +169,13 @@ func init() {
 	})
 
 	AddRoute("GET", "/catalog/scopes", func(w http.ResponseWriter, req *http.Request, c *Controller) {
+		io.WriteString(w, "Scopes catalog here...")
+	})
+
+	AddRoute("GET", "/catalog/rules", func(w http.ResponseWriter, req *http.Request, c *Controller) {
+		for _, rule := range rules.Rules {
+
+		}
 		io.WriteString(w, "Scopes catalog here...")
 	})
 
