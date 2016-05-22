@@ -25,7 +25,7 @@ func main() {
 
 	// Register scopes
 	scope := mgr.NewScope("default", "Default scope")
-	scope.UseRule(rules.Path("/"))
+	scope.UseRule(rules.Path("/(.*)"))
 	scope.UsePlugin(static.New("/Users/h2non/Projects/vinxi"))
 
 	// Registers a simple middleware handler

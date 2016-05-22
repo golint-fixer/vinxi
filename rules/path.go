@@ -1,46 +1,38 @@
 package rules
 
 import (
-	"net/http"
-
-	"github.com/dchest/uniuri"
+	"gopkg.in/vinxi/vinxi.v0/manager"
+	"gopkg.in/vinxi/vinxi.v0/mux"
 )
 
-type PathRule struct {
-	id       string
-	path     string
-	disabled bool
+const (
+	pathRuleName        = "path"
+	pathRuleDescription = "Matches HTTP request URL path againts a given path pattern"
+)
+
+var pathRule = Rule{
+	Name:        pathRuleName,
+	Description: pathRuleDescription,
+	Factory:     pathFactory,
 }
 
-func Path(path string) *PathRule {
-	return &PathRule{id: uniuri.New(), path: path}
+func pathFactory(config manager.Config) manager.Rule {
+	return manager.NewRuleWithConfig(
+		pathRuleName,
+		pathRuleDescription,
+		config,
+		mux.MatchPath(config.GetString("path")),
+	)
 }
 
-func (p *PathRule) ID() string {
-	return p.id
+// Path creates a new rule who filters the traffic
+// if matches with the following path expression.
+// Regular expressions is supported.
+func Path(path string) manager.Rule {
+	config := map[string]interface{}{"path": path}
+	return pathFactory(config)
 }
 
-func (p *PathRule) Name() string {
-	return "path"
-}
-
-func (p *PathRule) Description() string {
-	return "Matches HTTP request URL path againts a given path pattern"
-}
-
-func (p *PathRule) Disable() {
-	p.disabled = true
-}
-
-func (p *PathRule) IsEnabled() bool {
-	return p.disabled
-}
-
-func (p *PathRule) JSONConfig() string {
-	// testing!
-	return "{\"path\": \"" + p.path + "\"}"
-}
-
-func (p *PathRule) Match(req *http.Request) bool {
-	return req.URL.Path == p.path
+func init() {
+	Rules.Register(pathRule)
 }

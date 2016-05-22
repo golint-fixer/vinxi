@@ -103,7 +103,7 @@ type JSONRule struct {
 	ID          string `json:"id"`
 	Name        string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
-	Config      string `json:"config,omitempty"`
+	Config      Config `json:"config,omitempty"`
 }
 
 type JSONPlugin struct {
@@ -284,9 +284,9 @@ func createScopes(scopes []*Scope) []JSONScope {
 }
 
 func createRules(scope *Scope) []JSONRule {
-	rules := make([]JSONRule, len(scope.rules))
-	for i, rule := range scope.rules {
-		rules[i] = JSONRule{ID: rule.ID(), Name: rule.Name(), Description: rule.Description(), Config: rule.JSONConfig()}
+	rules := make([]JSONRule, scope.rules.Len())
+	for i, rule := range scope.rules.pool {
+		rules[i] = JSONRule{ID: rule.ID(), Name: rule.Name(), Description: rule.Description(), Config: rule.Config()}
 	}
 	return rules
 }
@@ -294,7 +294,7 @@ func createRules(scope *Scope) []JSONRule {
 func createPlugins(scope *Scope) []JSONPlugin {
 	plugins := make([]JSONPlugin, scope.plugins.Len())
 	for i, plugin := range scope.plugins.pool {
-		plugins[i] = JSONPlugin{ID: plugin.ID(), Name: plugin.Name(), Description: plugin.Description(), Enabled: plugin.IsEnabled()}
+		plugins[i] = JSONPlugin{ID: plugin.ID(), Name: plugin.Name(), Description: plugin.Description()}
 	}
 	return plugins
 }

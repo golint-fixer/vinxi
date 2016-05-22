@@ -6,87 +6,73 @@ import (
 	"github.com/dchest/uniuri"
 )
 
-// Rule represents the required interface implemented
-// by HTTP traffic rules.
-//
-// Rule is designed to inspect an incoming HTTP
-// traffic and determine if should trigger the registered
-// plugins if the rule matches.
-type Rule interface {
-	// ID returns the rule unique identifier.
-	ID() string
-	// Name returns the rule semantic alias.
-	Name() string
-	// Description is used to retrieve the rule semantic description.
-	Description() string
-	// JSONConfig is used to retrieve the rule config as JSON.
-	JSONConfig() string
-	// Match is used to determine if a given http.Request
-	// passes the rule assertion.
-	Match(*http.Request) bool
-}
-
 // Scope represents the HTTP configuration scope who can
 // store rules and plugins.
 type Scope struct {
-	disabled bool
-	rules    []Rule
-	plugins  *PluginLayer
-
-	ID          string
-	Name        string
+	// rules stores the scope registered rules.
+	rules *RuleLayer
+	// plugins provides the plugin register layer.
+	plugins *PluginLayer
+	// ID is used to store the plugin unique identifier.
+	ID string
+	// Name is used to store the scope semantic alias.
+	Name string
+	// Description is used to store the scope human
+	// friendly description.
 	Description string
 }
 
 // NewScope creates a new Scope instance
 // with the given name alias and optional description.
 func NewScope(name, description string) *Scope {
-	return &Scope{ID: uniuri.New(), Name: name, Description: description, plugins: NewPluginLayer()}
+	return &Scope{
+		ID:          uniuri.New(),
+		Name:        name,
+		Description: description,
+		rules:       NewRuleLayer(),
+		plugins:     NewPluginLayer(),
+	}
 }
 
+// UseRule registers one or multiple rules in the current scope.
+func (s *Scope) UseRule(rules ...Rule) {
+	s.rules.Use(rules...)
+}
+
+// UseRule registers one or multiple plugins in the current scope.
 func (s *Scope) UsePlugin(plugins ...Plugin) {
 	s.plugins.Use(plugins...)
 }
 
-func (s *Scope) UseRule(rules ...Rule) {
-	s.rules = append(s.rules, rules...)
-}
-
-func (s *Scope) Rules() []Rule {
+// Rules returns the rules register layer of the current scope.
+func (s *Scope) Rules() *RuleLayer {
 	return s.rules
 }
 
+// Plugins returns the plugins register layer of the current scope.
+func (s *Scope) Plugins() *PluginLayer {
+	return s.plugins
+}
+
+// RemoveRule removes a rule by its ID.
 func (s *Scope) RemoveRule(id string) bool {
-	return true
+	return s.plugins.Remove(id)
 }
 
-func (s *Scope) Disable() {
-	s.disabled = true
+// RemovePlugin removes a plugin by its ID.
+func (s *Scope) RemovePlugin(id string) bool {
+	return s.plugins.Remove(id)
 }
 
-func (s *Scope) Enable() {
-	s.disabled = false
-}
-
-func (s *Scope) IsEnabled() bool {
-	return s.disabled == false
-}
-
-func (s *Scope) HandleHTTP(h http.Handler) func(http.ResponseWriter, *http.Request) {
+// HandleHTTP is used to trigger the scope layer.
+// If all the rules passes, it will execute the scope specific registered plugins.
+func (s *Scope) HandleHTTP(h http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if s.disabled {
+		for !s.rules.Match(r) {
+			// If no matches, just continue
 			h.ServeHTTP(w, r)
 			return
 		}
-
-		for _, rule := range s.rules {
-			if !rule.Match(r) {
-				// If no matches, just continue
-				h.ServeHTTP(w, r)
-				return
-			}
-		}
-
 		s.plugins.Run(w, r, h)
 	}
 }

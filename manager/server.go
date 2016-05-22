@@ -8,7 +8,10 @@ import (
 
 var (
 	// DefaultPort stores the default TCP port to listen.
-	DefaultPort = 8080
+	DefaultPort = 8000
+
+	// DefaultSecurePort stores the default TCP port to listen for secure only connections.
+	DefaultSecurePort = 8443
 
 	// DefaultReadTimeout defines the maximum timeout for request read.
 	DefaultReadTimeout = 60
@@ -32,6 +35,9 @@ func NewServer(o ServerOptions) *http.Server {
 	// Apply default options
 	if o.Port == 0 {
 		o.Port = DefaultPort
+		if o.CertFile != "" && o.KeyFile != "" {
+			o.Port = DefaultSecurePort
+		}
 	}
 	if o.ReadTimeout == 0 {
 		o.ReadTimeout = DefaultReadTimeout
