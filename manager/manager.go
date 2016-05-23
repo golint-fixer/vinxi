@@ -159,14 +159,30 @@ func AddRoute(method, path string, fn ControllerHandler) {
 	routes = append(routes, route)
 }
 
+func reply(w http.ResponseWriter) func([]byte, error) {
+	return func(buf []byte, err error) {
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+			return
+		}
+		w.Write(buf)
+	}
+}
+
 func init() {
 	AddRoute("GET", "/", func(w http.ResponseWriter, req *http.Request, c *Controller) {
 		io.WriteString(w, "vinxi HTTP API manager "+vinxi.Version)
 	})
 
 	AddRoute("GET", "/version", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"vinxi": "`+vinxi.Version+`"}`)
+		versions := struct {
+			Vinxi string `json:"vinxi"`
+		}{
+			Vinxi: vinxi.Version,
+		}
+
+		reply(w)(json.Marshal(versions))
 	})
 
 	AddRoute("GET", "/health", func(w http.ResponseWriter, req *http.Request, c *Controller) {
@@ -175,27 +191,25 @@ func init() {
 	})
 
 	AddRoute("GET", "/catalog", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		io.WriteString(w, "Catalog here...")
+		links := struct {
+			Links map[string]string `json:"links,omitempty"`
+		}{
+			Links: map[string]string{
+				"self":    "/catalog",
+				"plugins": "/catalog/plugins",
+				"rules":   "/catalog/rules",
+			},
+		}
+
+		reply(w)(json.Marshal(links))
 	})
 
 	AddRoute("GET", "/catalog/plugins", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		buf, err := json.Marshal(plugin.Plugins)
-		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
-			return
-		}
-		w.Write(buf)
+		reply(w)(json.Marshal(plugin.Plugins))
 	})
 
 	AddRoute("GET", "/catalog/rules", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		buf, err := json.Marshal(rule.Rules)
-		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
-			return
-		}
-		w.Write(buf)
+		reply(w)(json.Marshal(rule.Rules))
 	})
 
 	AddRoute("GET", "/instances", func(w http.ResponseWriter, req *http.Request, c *Controller) {
