@@ -311,16 +311,16 @@ func createScopes(scopes []*Scope) []JSONScope {
 }
 
 func createRules(scope *Scope) []JSONRule {
-	rules := make([]JSONRule, scope.rules.Len())
-	for i, rule := range scope.rules.Get() {
+	rules := make([]JSONRule, scope.Rules.Len())
+	for i, rule := range scope.Rules.Get() {
 		rules[i] = JSONRule{ID: rule.ID(), Name: rule.Name(), Description: rule.Description(), Config: rule.Config()}
 	}
 	return rules
 }
 
 func createPlugins(scope *Scope) []JSONPlugin {
-	plugins := make([]JSONPlugin, scope.plugins.Len())
-	for i, plugin := range scope.plugins.Get() {
+	plugins := make([]JSONPlugin, scope.Plugins.Len())
+	for i, plugin := range scope.Plugins.Get() {
 		plugins[i] = JSONPlugin{ID: plugin.ID(), Name: plugin.Name(), Description: plugin.Description(), Config: plugin.Config()}
 	}
 	return plugins
