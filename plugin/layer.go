@@ -3,8 +3,6 @@ package plugin
 import (
 	"net/http"
 	"sync"
-
-	"gopkg.in/vinxi/vinxi.v0/layer"
 )
 
 // Layer represents a plugins layer designed to intrument
@@ -31,12 +29,6 @@ func (l *Layer) Use(plugin ...Plugin) {
 // Len returns the registered plugins length.
 func (l *Layer) Len() int {
 	return len(l.pool)
-}
-
-// Register implements the middleware Register method.
-func (l *Layer) Register(mw *layer.Layer) {
-	mw.Use("error", l.Run)
-	mw.Use("request", l.Run)
 }
 
 // Get returns an slice of the registered plugins.
