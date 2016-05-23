@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"sync"
 
 	"github.com/dchest/uniuri"
 	"github.com/julienschmidt/httprouter"
@@ -27,13 +28,16 @@ type Instance struct {
 	instance    *vinxi.Vinxi
 }
 
+// Manager represents the vinxi proxy admin manager.
 type Manager struct {
+	layer     *layer.Layer
+	plugins   *plugin.Layer
+	sm        sync.RWMutex
+	scopes    []*Scope
+	im        sync.RWMutex
+	instances []*Instance
 	Server    *http.Server
 	Router    *httprouter.Router
-	plugins   *plugin.Layer
-	scopes    []*Scope
-	instances []*Instance
-	layer     *layer.Layer
 }
 
 // New creates a new manager able to manage
@@ -94,7 +98,9 @@ func (m *Manager) ServeDefault() (*http.Server, error) {
 // and optional description.
 func (m *Manager) NewScope(name, description string) *Scope {
 	scope := NewScope(name, description)
+	m.sm.Lock()
 	m.scopes = append(m.scopes, scope)
+	m.sm.Unlock()
 	return scope
 }
 
@@ -105,13 +111,75 @@ func (m *Manager) NewDefaultScope(rules ...rule.Rule) *Scope {
 	return scope
 }
 
+// GetScope finds and returns a vinxi managed instance.
+func (m *Manager) GetScope(name string) *Scope {
+	m.sm.Lock()
+	defer m.sm.Unlock()
+
+	for _, scope := range m.scopes {
+		if scope.ID == name || scope.Name == name {
+			return scope
+		}
+	}
+
+	return nil
+}
+
+// RemoveScope removes a registered scope.
+// Returns false if the scope cannot be found.
+func (m *Manager) RemoveScope(name string) bool {
+	m.sm.Lock()
+	defer m.sm.Unlock()
+
+	for i, scope := range m.scopes {
+		if scope.ID == name || scope.Name == name {
+			m.scopes = append(m.scopes[:i], m.scopes[i+1:]...)
+			return true
+		}
+	}
+
+	return false
+}
+
+// GetInstance finds and returns a vinxi managed instance.
+func (m *Manager) GetInstance(name string) *Instance {
+	m.im.Lock()
+	defer m.im.Unlock()
+
+	for _, instance := range m.instances {
+		if instance.ID == name || instance.Name == name {
+			return instance
+		}
+	}
+
+	return nil
+}
+
+// RemoveInstance removes a registered vinxi instance.
+// Returns false if the instance cannot be found.
+func (m *Manager) RemoveInstance(name string) bool {
+	m.im.Lock()
+	defer m.im.Unlock()
+
+	for i, instance := range m.instances {
+		if instance.ID == name || instance.Name == name {
+			m.instances = append(m.instances[:i], m.instances[i+1:]...)
+			return true
+		}
+	}
+
+	return false
+}
+
 // HandleHTTP is triggered by the vinxi middleware layer on incoming HTTP request.
 func (m *Manager) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Handler) {
 	next := h
 
+	m.sm.RLock()
 	for _, scope := range m.scopes {
 		next = http.HandlerFunc(scope.HandleHTTP(next))
 	}
+	m.sm.RUnlock()
 
 	next.ServeHTTP(w, r)
 }
