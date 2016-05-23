@@ -42,7 +42,8 @@ func (c Config) Get(key string) interface{} {
 
 // Exists checks is config field is present.
 func (c Config) Exists(key string) bool {
-	return c[key] != nil
+	_, ok := c[key]
+	return ok
 }
 
 // JSON serializes the config fields a JSON.

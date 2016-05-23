@@ -1,4 +1,4 @@
-package path
+package vhost
 
 import (
 	"gopkg.in/vinxi/vinxi.v0/config"
@@ -8,17 +8,17 @@ import (
 
 const (
 	// Name exposes the rule name identifier.
-	Name = "path"
+	Name = "vhost"
 	// Description exposes the rule semantic description.
-	Description = "Matches HTTP request URL path againts a given path pattern"
+	Description = "Matches HTTP request by Host header"
 )
 
 // params defines the rule specific configuration params.
 var params = rule.Params{
 	rule.Field{
-		Name:        "path",
+		Name:        "host",
 		Type:        "string",
-		Description: "Path expression to match",
+		Description: "Hostname expression to match. Regular expressions are supported.",
 		Mandatory:   true,
 	},
 }
@@ -39,15 +39,15 @@ func Factory(opts config.Config) rule.Rule {
 		Name,
 		Description,
 		opts,
-		mux.MatchPath(opts.GetString("path")),
+		mux.MatchHost(opts.GetString("host")),
 	)
 }
 
 // New creates a new rule who filters the traffic
 // if matches with the following path expression.
 // Regular expressions is supported.
-func New(path string) rule.Rule {
-	config := map[string]interface{}{"path": path}
+func New(host string) rule.Rule {
+	config := map[string]interface{}{"host": host}
 	return Factory(config)
 }
 
