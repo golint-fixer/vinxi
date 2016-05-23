@@ -33,12 +33,13 @@ type Manager struct {
 	plugins   *plugin.Layer
 	scopes    []*Scope
 	instances []*Instance
+	layer     *layer.Layer
 }
 
 // New creates a new manager able to manage
 // and configure multiple vinxi proxy instance.
 func New() *Manager {
-	return &Manager{plugins: plugin.NewLayer(), Router: httprouter.New()}
+	return &Manager{layer: layer.New(), plugins: plugin.NewLayer(), Router: httprouter.New()}
 }
 
 // Manage creates a new empty manage and
@@ -58,6 +59,21 @@ func (m *Manager) Manage(name, description string, proxy *vinxi.Vinxi) {
 	// Register the managed Vinxi instance
 	instance := &Instance{ID: uniuri.New(), Name: name, Description: description, instance: proxy}
 	m.instances = append(m.instances, instance)
+}
+
+// Use attaches a new middleware handler for incoming HTTP traffic.
+func (m *Manager) Use(handler ...interface{}) {
+	m.layer.Use(layer.RequestPhase, handler...)
+}
+
+// UsePhase attaches a new middleware handler to a specific phase.
+func (m *Manager) UsePhase(phase string, handler ...interface{}) {
+	m.layer.Use(phase, handler...)
+}
+
+// UseFinalHandler uses a new middleware handler function as final handler.
+func (m *Manager) UseFinalHandler(fn http.Handler) {
+	m.layer.UseFinalHandler(fn)
 }
 
 // ListenAndServe creates a new admin HTTP server and starts listening on
@@ -100,17 +116,22 @@ func (m *Manager) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Hand
 	next.ServeHTTP(w, r)
 }
 
+// serveHTTP is used to handle HTTP traffic via admin API.
+func (m *Manager) serveHTTP(w http.ResponseWriter, r *http.Request) {
+	// trigger middleware layer first, then the router
+	m.layer.Run(layer.RequestPhase, w, r, m.Router)
+}
+
 // configure is used to configure the HTTP API.
-func (m *Manager) configure() error {
-	m.Server.Handler = m.Router
+func (m *Manager) configure() {
+	// bind the admin http.Handler
+	m.Server.Handler = http.HandlerFunc(m.serveHTTP)
 
 	// Define route handlers
 	for _, r := range routes {
 		m.Router.Handler(r.Method, r.Path, r)
 		r.Manager = m // Expose manager instance in routes
 	}
-
-	return nil
 }
 
 type JSONRule struct {
