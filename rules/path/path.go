@@ -35,7 +35,7 @@ var Rule = rule.Info{
 // Factory represents the rule factory function
 // designed to be called via rules constructor.
 func Factory(opts config.Config) rule.Rule {
-	return rule.NewRuleWithConfig(
+	return rule.NewWithConfig(
 		Name,
 		Description,
 		opts,

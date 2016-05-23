@@ -192,7 +192,7 @@ func TestConcurrentRegistration(t *testing.T) {
 	max := 10
 	wg.Add(max)
 
-	for i := 0; i < max; i += 1 {
+	for i := 0; i < max; i++ {
 		go (func() {
 			mw.Use(RequestPhase, fn)
 			wg.Done()

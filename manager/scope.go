@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/dchest/uniuri"
+	"gopkg.in/vinxi/vinxi.v0/plugin"
 	"gopkg.in/vinxi/vinxi.v0/rule"
 )
 
@@ -11,9 +12,9 @@ import (
 // store rules and plugins.
 type Scope struct {
 	// rules stores the scope registered rules.
-	rules *RuleLayer
+	rules *rule.Layer
 	// plugins provides the plugin register layer.
-	plugins *PluginLayer
+	plugins *plugin.Layer
 	// ID is used to store the plugin unique identifier.
 	ID string
 	// Name is used to store the scope semantic alias.
@@ -30,8 +31,8 @@ func NewScope(name, description string) *Scope {
 		ID:          uniuri.New(),
 		Name:        name,
 		Description: description,
-		rules:       NewRuleLayer(),
-		plugins:     NewPluginLayer(),
+		rules:       rule.NewLayer(),
+		plugins:     plugin.NewLayer(),
 	}
 }
 
@@ -41,17 +42,17 @@ func (s *Scope) UseRule(rules ...rule.Rule) {
 }
 
 // UseRule registers one or multiple plugins in the current scope.
-func (s *Scope) UsePlugin(plugins ...Plugin) {
+func (s *Scope) UsePlugin(plugins ...plugin.Plugin) {
 	s.plugins.Use(plugins...)
 }
 
 // Rules returns the rules register layer of the current scope.
-func (s *Scope) Rules() *RuleLayer {
+func (s *Scope) Rules() *rule.Layer {
 	return s.rules
 }
 
 // Plugins returns the plugins register layer of the current scope.
-func (s *Scope) Plugins() *PluginLayer {
+func (s *Scope) Plugins() *plugin.Layer {
 	return s.plugins
 }
 

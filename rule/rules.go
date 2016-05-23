@@ -37,6 +37,15 @@ func Register(rule Info) {
 	Rules[rule.Name] = rule
 }
 
+// Init is used to initialize a new rule by name identifier
+// based on the given config options.
+func Init(name string, opts config.Config) Rule {
+	if !Exists(name) {
+		panic("vinxi: rule '" + name + "' does not exists.")
+	}
+	return Rules[name].Factory(opts)
+}
+
 // Get is used to find and retrieve a rule factory function.
 func Get(name string) Factory {
 	rule, ok := Rules[name]

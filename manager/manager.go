@@ -11,13 +11,15 @@ import (
 	"gopkg.in/vinxi/vinxi.v0"
 	"gopkg.in/vinxi/vinxi.v0/config"
 	"gopkg.in/vinxi/vinxi.v0/layer"
+	"gopkg.in/vinxi/vinxi.v0/plugin"
 	"gopkg.in/vinxi/vinxi.v0/rule"
 
 	// An empty import is required to load all the rules subpackages
+	_ "gopkg.in/vinxi/vinxi.v0/plugins"
 	_ "gopkg.in/vinxi/vinxi.v0/rules"
 )
 
-type VinxiInstance struct {
+type Instance struct {
 	ID          string `json:"id"`
 	Name        string `json:"name,omitempty"`
 	Description string `json:"description,omitempty"`
@@ -27,27 +29,33 @@ type VinxiInstance struct {
 
 type Manager struct {
 	Server    *http.Server
-	plugins   *PluginLayer
+	plugins   *plugin.Layer
 	scopes    []*Scope
-	instances []*VinxiInstance
+	instances []*Instance
 }
 
+// New creates a new manager able to manage
+// and configure multiple vinxi proxy instance.
 func New() *Manager {
-	return &Manager{plugins: NewPluginLayer()}
+	return &Manager{plugins: plugin.NewLayer()}
 }
 
+// Manage creates a new empty manage and
+// starts managing the given vinxi proxy instance.
 func Manage(name, description string, proxy *vinxi.Vinxi) *Manager {
 	m := New()
 	m.Manage(name, description, proxy)
 	return m
 }
 
+// Manage adds a new vinxi proxy instance to be
+// managed by the current manager instance.
 func (m *Manager) Manage(name, description string, proxy *vinxi.Vinxi) {
 	// Register manager middleware in the proxy
 	proxy.Layer.UsePriority("request", layer.Tail, m)
 
 	// Register the managed Vinxi instance
-	instance := &VinxiInstance{ID: uniuri.New(), Name: name, Description: description, instance: proxy}
+	instance := &Instance{ID: uniuri.New(), Name: name, Description: description, instance: proxy}
 	m.instances = append(m.instances, instance)
 }
 
@@ -55,7 +63,7 @@ func (m *Manager) Manage(name, description string, proxy *vinxi.Vinxi) {
 // the network based on the given server options.
 func (m *Manager) ListenAndServe(opts ServerOptions) (*http.Server, error) {
 	m.Server = NewServer(opts)
-	m.Configure()
+	m.configure()
 	return m.Server, Listen(m.Server, opts)
 }
 
@@ -91,7 +99,8 @@ func (m *Manager) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Hand
 	next.ServeHTTP(w, r)
 }
 
-func (m *Manager) Configure() error {
+// configure is used to configure the HTTP API.
+func (m *Manager) configure() error {
 	router := httprouter.New()
 	m.Server.Handler = router
 
@@ -112,10 +121,11 @@ type JSONRule struct {
 }
 
 type JSONPlugin struct {
-	ID          string `json:"id"`
-	Name        string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	Enabled     bool   `json:"enabled,omitempty"`
+	ID          string        `json:"id"`
+	Name        string        `json:"name,omitempty"`
+	Description string        `json:"description,omitempty"`
+	Enabled     bool          `json:"enabled,omitempty"`
+	Config      config.Config `json:"config,omitempty"`
 }
 
 type JSONScope struct {
@@ -300,7 +310,7 @@ func createScopes(scopes []*Scope) []JSONScope {
 
 func createRules(scope *Scope) []JSONRule {
 	rules := make([]JSONRule, scope.rules.Len())
-	for i, rule := range scope.rules.pool {
+	for i, rule := range scope.rules.Get() {
 		rules[i] = JSONRule{ID: rule.ID(), Name: rule.Name(), Description: rule.Description(), Config: rule.Config()}
 	}
 	return rules
@@ -308,8 +318,8 @@ func createRules(scope *Scope) []JSONRule {
 
 func createPlugins(scope *Scope) []JSONPlugin {
 	plugins := make([]JSONPlugin, scope.plugins.Len())
-	for i, plugin := range scope.plugins.pool {
-		plugins[i] = JSONPlugin{ID: plugin.ID(), Name: plugin.Name(), Description: plugin.Description()}
+	for i, plugin := range scope.plugins.Get() {
+		plugins[i] = JSONPlugin{ID: plugin.ID(), Name: plugin.Name(), Description: plugin.Description(), Config: plugin.Config()}
 	}
 	return plugins
 }

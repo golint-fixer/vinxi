@@ -25,8 +25,8 @@ func main() {
 
 	// Register scopes
 	scope := mgr.NewScope("default", "Default scope")
-	scope.UseRule(rule.Get("path")(map[string]interface{}{"path": "/(.*)"}))
-	scope.UseRule(rule.Get("vhost")(map[string]interface{}{"host": "localhost"}))
+	scope.UseRule(rule.Init("path", map[string]interface{}{"path": "/(.*)"}))
+	scope.UseRule(rule.Init("vhost", map[string]interface{}{"host": "localhost"}))
 	scope.UsePlugin(static.New("/Users/h2non/Projects/vinxi"))
 
 	// Registers a simple middleware handler

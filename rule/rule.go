@@ -55,13 +55,13 @@ func (r *rule) Match(req *http.Request) bool {
 	return r.matcher(req)
 }
 
-// NewRule creates a new rule entity based on the given matcher function.
-func NewRule(name, description string, matcher func(*http.Request) bool) *rule {
-	return NewRuleWithConfig(name, description, make(map[string]interface{}), matcher)
+// New creates a new rule entity based on the given matcher function.
+func New(name, description string, matcher func(*http.Request) bool) Rule {
+	return NewWithConfig(name, description, make(map[string]interface{}), matcher)
 }
 
-// NewRuleWithConfig creates a new rule entity based on the given config and matcher function.
-func NewRuleWithConfig(name, description string, opts map[string]interface{}, matcher func(*http.Request) bool) *rule {
+// NewWithConfig creates a new rule entity based on the given config and matcher function.
+func NewWithConfig(name, description string, opts map[string]interface{}, matcher func(*http.Request) bool) Rule {
 	return &rule{
 		id:          uniuri.New(),
 		name:        name,
