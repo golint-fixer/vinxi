@@ -10,9 +10,6 @@ import (
 // Handler represents the plugin specific HTTP handler function interface.
 type Handler func(http.Handler) http.Handler
 
-// Factory functions represents the plugin factory function interface.
-type Factory func(config.Config) Plugin
-
 // Plugin represents the required interface implemented by plugins.
 type Plugin interface {
 	// ID is used to retrieve the plugin unique identifier.
@@ -39,12 +36,26 @@ type plugin struct {
 
 // New creates a new Plugin capable interface based on the
 // given HTTP handler logic encapsulated as plugin.
-func New(name, description string, handler Handler) Factory {
-	p := &plugin{id: uniuri.New(), name: name, description: description, handler: handler}
-	return func(opts config.Config) Plugin {
-		p.config = opts
-		return p
+func New(info Info) FactoryFunc {
+	return func(opts config.Config) (Plugin, error) {
+		return NewWithConfig(info, opts)
 	}
+}
+
+// NewWithConfig creates a new Plugin capable interface based on the
+// given HTTP handler logic encapsulated as plugin.
+func NewWithConfig(info Info, opts config.Config) (Plugin, error) {
+	if err := Validate(info.Params, opts); err != nil {
+		return nil, err
+	}
+
+	return &plugin{
+		id:          uniuri.New(),
+		name:        info.Name,
+		description: info.Description,
+		config:      opts,
+		handler:     info.Factory(opts),
+	}, nil
 }
 
 // ID returns the plugin identifer.
@@ -72,8 +83,7 @@ func (p *plugin) Config() config.Config {
 // HandleHTTP implements the required plugin HTTP handler interface
 // triggered by the plugin layer during the incoming request call chain.
 func (p *plugin) HandleHTTP(h http.Handler) http.Handler {
-	next := p.handler(h)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r)
+		p.handler(h).ServeHTTP(w, r)
 	})
 }

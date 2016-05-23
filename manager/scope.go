@@ -41,7 +41,7 @@ func (s *Scope) UseRule(rules ...rule.Rule) {
 	s.rules.Use(rules...)
 }
 
-// UseRule registers one or multiple plugins in the current scope.
+// UsePlugin registers one or multiple plugins in the current scope.
 func (s *Scope) UsePlugin(plugins ...plugin.Plugin) {
 	s.plugins.Use(plugins...)
 }

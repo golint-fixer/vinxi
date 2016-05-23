@@ -47,8 +47,7 @@ func Factory(opts config.Config) rule.Rule {
 // if matches with the following path expression.
 // Regular expressions is supported.
 func New(path string) rule.Rule {
-	config := map[string]interface{}{"path": path}
-	return Factory(config)
+	return Factory(config.Config{"path": path})
 }
 
 func init() {

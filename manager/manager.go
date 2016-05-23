@@ -29,6 +29,7 @@ type Instance struct {
 
 type Manager struct {
 	Server    *http.Server
+	Router    *httprouter.Router
 	plugins   *plugin.Layer
 	scopes    []*Scope
 	instances []*Instance
@@ -37,7 +38,7 @@ type Manager struct {
 // New creates a new manager able to manage
 // and configure multiple vinxi proxy instance.
 func New() *Manager {
-	return &Manager{plugins: plugin.NewLayer()}
+	return &Manager{plugins: plugin.NewLayer(), Router: httprouter.New()}
 }
 
 // Manage creates a new empty manage and
@@ -101,13 +102,12 @@ func (m *Manager) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Hand
 
 // configure is used to configure the HTTP API.
 func (m *Manager) configure() error {
-	router := httprouter.New()
-	m.Server.Handler = router
+	m.Server.Handler = m.Router
 
 	// Define route handlers
 	for _, r := range routes {
+		m.Router.Handler(r.Method, r.Path, r)
 		r.Manager = m // Expose manager instance in routes
-		router.Handler(r.Method, r.Path, r)
 	}
 
 	return nil
@@ -179,11 +179,13 @@ func init() {
 	})
 
 	AddRoute("GET", "/catalog/plugins", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		io.WriteString(w, "Plugin catalog here...")
-	})
-
-	AddRoute("GET", "/catalog/scopes", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		io.WriteString(w, "Scopes catalog here...")
+		buf, err := json.Marshal(plugin.Plugins)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+			return
+		}
+		w.Write(buf)
 	})
 
 	AddRoute("GET", "/catalog/rules", func(w http.ResponseWriter, req *http.Request, c *Controller) {

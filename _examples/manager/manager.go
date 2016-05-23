@@ -5,8 +5,9 @@ import (
 	"net/http"
 
 	"gopkg.in/vinxi/vinxi.v0"
+	"gopkg.in/vinxi/vinxi.v0/config"
 	"gopkg.in/vinxi/vinxi.v0/manager"
-	"gopkg.in/vinxi/vinxi.v0/plugins/static"
+	"gopkg.in/vinxi/vinxi.v0/plugin"
 	"gopkg.in/vinxi/vinxi.v0/rule"
 )
 
@@ -27,7 +28,14 @@ func main() {
 	scope := mgr.NewScope("default", "Default scope")
 	scope.UseRule(rule.Init("path", map[string]interface{}{"path": "/(.*)"}))
 	scope.UseRule(rule.Init("vhost", map[string]interface{}{"host": "localhost"}))
-	scope.UsePlugin(static.New("/Users/h2non/Projects/vinxi"))
+
+	plugin, err := plugin.Init("static", config.Config{"path": "/Users/h2non/Projects/vinxi"})
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+		return
+	}
+
+	scope.UsePlugin(plugin)
 
 	// Registers a simple middleware handler
 	v.Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
@@ -39,7 +47,7 @@ func main() {
 	v.Forward("http://httpbin.org")
 
 	fmt.Printf("Server listening on port: %d\n", port)
-	_, err := v.ListenAndServe(vinxi.ServerOptions{Port: port})
+	_, err = v.ListenAndServe(vinxi.ServerOptions{Port: port})
 	if err != nil {
 		fmt.Errorf("Error: %s\n", err)
 	}
