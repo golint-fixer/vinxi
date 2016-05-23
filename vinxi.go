@@ -43,7 +43,7 @@ func New() *Vinxi {
 	// Bind router with parent layer
 	v.Router.SetParent(v.Layer)
 	// Register the router in the middleware tail (this should change in the future)
-	v.Layer.UsePriority("request", layer.Tail, v.Router)
+	v.Layer.UsePriority(layer.RequestPhase, layer.Tail, v.Router)
 	// Use the default forwarder as final middleware handler
 	v.UseFinalHandler(DefaultForwarder)
 	return v
