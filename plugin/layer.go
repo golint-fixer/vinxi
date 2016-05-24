@@ -51,6 +51,13 @@ func (l *Layer) All() []Plugin {
 	return l.pool
 }
 
+// Flush removes all the registered plugins.
+func (l *Layer) Flush() {
+	l.rwm.Lock()
+	l.pool = []Plugin{}
+	l.rwm.Unlock()
+}
+
 // Remove removes a plugin looking by its unique identifier.
 func (l *Layer) Remove(id string) bool {
 	l.rwm.Lock()

@@ -13,7 +13,7 @@ type Factory func(config.Config) Handler
 // FactoryFunc represents the plugin factory configuration function interface.
 type FactoryFunc func(config.Config) (Plugin, error)
 
-// Validator represents the plugin factory function interface.
+// Validator represents the plugin config field validator function interface.
 type Validator func(interface{}, config.Config) error
 
 // Info represents the plugin entity fields
@@ -31,12 +31,13 @@ type Params []Field
 
 // Field is used to declare specific config fields supported by plugins.
 type Field struct {
-	Name        string    `json:"name,omitempty"`
-	Type        string    `json:"type,omitempty"`
-	Description string    `json:"description,omitempty"`
-	Mandatory   bool      `json:"mandatory,omitempty"`
-	Example     string    `json:"example,omitempty"`
-	Validator   Validator `json:"-"`
+	Name        string      `json:"name,omitempty"`
+	Type        string      `json:"type,omitempty"`
+	Description string      `json:"description,omitempty"`
+	Example     string      `json:"example,omitempty"`
+	Mandatory   bool        `json:"mandatory,omitempty"`
+	Default     interface{} `json:"default,omitempty"`
+	Validator   Validator   `json:"-"`
 }
 
 // Register registers the given plugin in the current store.

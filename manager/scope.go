@@ -48,12 +48,22 @@ func (s *Scope) UsePlugin(plugins ...plugin.Plugin) {
 
 // RemoveRule removes a rule by its ID.
 func (s *Scope) RemoveRule(id string) bool {
-	return s.Plugins.Remove(id)
+	return s.Rules.Remove(id)
+}
+
+// FlushRules removes all the registered rules.
+func (s *Scope) FlushRules() {
+	s.Rules.Flush()
 }
 
 // RemovePlugin removes a plugin by its ID.
 func (s *Scope) RemovePlugin(id string) bool {
 	return s.Plugins.Remove(id)
+}
+
+// FlushPlugins removes all the registered plugins.
+func (s *Scope) FlushPlugins() {
+	s.Plugins.Flush()
 }
 
 // HandleHTTP is used to trigger the scope layer.

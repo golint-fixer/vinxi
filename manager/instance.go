@@ -11,9 +11,10 @@ import (
 
 // Instance represents the manager instance level.
 type Instance struct {
-	ID          string `json:"id"`
-	Name        string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
+	ID          string                 `json:"id"`
+	Name        string                 `json:"name,omitempty"`
+	Description string                 `json:"description,omitempty"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 	sm          sync.RWMutex
 	scopes      []*Scope
 	instance    *vinxi.Vinxi
@@ -41,8 +42,8 @@ func (i *Instance) NewDefaultScope(rules ...rule.Rule) *Scope {
 	return scope
 }
 
-// GetScopes returns the list of registered scopes.
-func (i *Instance) GetScopes() []*Scope {
+// Scopes returns the list of registered scopes.
+func (i *Instance) Scopes() []*Scope {
 	i.sm.RLock()
 	defer i.sm.RUnlock()
 	return i.scopes
@@ -76,6 +77,12 @@ func (i *Instance) RemoveScope(name string) bool {
 	}
 
 	return false
+}
+
+// SetMeta defines a new metadata metadata field.
+// TODO protect by mutex
+func (i *Instance) SetMeta(key string, value interface{}) {
+	i.Metadata[key] = value
 }
 
 // HandleHTTP is triggered by the vinxi middleware layer on incoming HTTP request.

@@ -1,10 +1,8 @@
 package manager
 
 import (
-	"bytes"
-	"encoding/json"
-	"io"
-	"net/http"
+	"os"
+	"runtime"
 
 	"gopkg.in/vinxi/vinxi.v0"
 	"gopkg.in/vinxi/vinxi.v0/config"
@@ -12,7 +10,16 @@ import (
 	"gopkg.in/vinxi/vinxi.v0/rule"
 )
 
-type JSONLinks map[string]string
+var routes = []*Controller{}
+
+func addRoute(method, path string, fn ControllerHandler) {
+	route := &Controller{
+		Path:    path,
+		Method:  method,
+		Handler: fn,
+	}
+	routes = append(routes, route)
+}
 
 type JSONRule struct {
 	ID          string        `json:"id"`
@@ -20,7 +27,6 @@ type JSONRule struct {
 	Description string        `json:"description,omitempty"`
 	Config      config.Config `json:"config,omitempty"`
 	Metadata    config.Config `json:"metadata,omitempty"`
-	Links       JSONLinks     `json:"links,omitempty"`
 }
 
 type JSONPlugin struct {
@@ -30,15 +36,13 @@ type JSONPlugin struct {
 	Enabled     bool          `json:"enabled,omitempty"`
 	Config      config.Config `json:"config,omitempty"`
 	Metadata    config.Config `json:"metadata,omitempty"`
-	Links       JSONLinks     `json:"links,omitempty"`
 }
 
 type JSONScope struct {
 	ID      string       `json:"id"`
 	Name    string       `json:"name,omitempty"`
-	Rules   []JSONRule   `json:"rules,omitempty"`
-	Plugins []JSONPlugin `json:"plugins,omitempty"`
-	Links   JSONLinks    `json:"links,omitempty"`
+	Rules   []JSONRule   `json:"rules"`
+	Plugins []JSONPlugin `json:"plugins"`
 }
 
 type JSONInstance struct {
@@ -47,343 +51,146 @@ type JSONInstance struct {
 	Description string          `json:"description,omitempty"`
 	Metadata    []config.Config `json:"metadata,omitempty"`
 	Scopes      []JSONScope     `json:"scopes"`
-	Links       JSONLinks       `json:"links,omitempty"`
-}
-
-type ControllerHandler func(http.ResponseWriter, *http.Request, *Controller)
-
-type Controller struct {
-	Path    string
-	Method  string
-	Manager *Manager
-	Handler ControllerHandler
-}
-
-func (c *Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c.Handler(w, r, c)
-}
-
-var routes = []*Controller{}
-
-func AddRoute(method, path string, fn ControllerHandler) {
-	route := &Controller{
-		Path:    path,
-		Method:  method,
-		Handler: fn,
-	}
-	routes = append(routes, route)
-}
-
-func replyWithError(w http.ResponseWriter, status int, message string) {
-	buf, err := json.Marshal(struct {
-		Code    int    `json:"code"`
-		Message string `json:"message,omitempty"`
-	}{status, message})
-
-	if err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	w.WriteHeader(status)
-	w.Write(buf)
-}
-
-func reply(w http.ResponseWriter) func([]byte, error) {
-	return func(buf []byte, err error) {
-		if err != nil {
-			replyWithError(w, 500, err.Error())
-		} else {
-			w.Write(buf)
-		}
-	}
-}
-
-func notFound(w http.ResponseWriter, message string) {
-	replyWithError(w, 404, message)
 }
 
 func init() {
-	AddRoute("GET", "/", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		io.WriteString(w, "vinxi HTTP API manager "+vinxi.Version)
-	})
+	addRoute("GET", "/", func(ctx *Context) {
+		hostname, _ := os.Hostname()
 
-	AddRoute("GET", "/version", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		reply(w)(json.Marshal(struct {
-			Vinxi string `json:"vinxi"`
+		info := struct {
+			Hostname string            `json:"hostname"`
+			Version  string            `json:"version"`
+			Platform string            `json:"platform"`
+			Links    map[string]string `json:"links"`
 		}{
-			Vinxi: vinxi.Version,
-		}))
-	})
-
-	AddRoute("GET", "/health", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, "{}")
-	})
-
-	AddRoute("GET", "/catalog", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		links := struct {
-			Links map[string]string `json:"links,omitempty"`
-		}{
+			Hostname: hostname,
+			Version:  vinxi.Version,
+			Platform: runtime.GOOS,
 			Links: map[string]string{
-				"self":    "/catalog",
-				"plugins": "/catalog/plugins",
-				"rules":   "/catalog/rules",
+				"catalog":   "/catalog",
+				"plugins":   "/plugins",
+				"scopes":    "/scopes",
+				"instances": "/instances",
 			},
 		}
 
-		reply(w)(json.Marshal(links))
+		ctx.SendJSON(info)
 	})
 
-	AddRoute("GET", "/catalog/plugins", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		reply(w)(json.Marshal(plugin.Plugins))
+	addRoute("GET", "/catalog", func(ctx *Context) {
+		rules := []rule.Info{}
+		for _, rule := range rule.Rules {
+			rules = append(rules, rule)
+		}
+
+		plugins := []plugin.Info{}
+		for _, plugin := range plugin.Plugins {
+			plugins = append(plugins, plugin)
+		}
+
+		catalog := struct {
+			Rules   []rule.Info   `json:"rules"`
+			Plugins []plugin.Info `json:"plugins"`
+		}{
+			Rules:   rules,
+			Plugins: plugins,
+		}
+
+		ctx.SendJSON(catalog)
 	})
 
-	AddRoute("GET", "/catalog/rules", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		reply(w)(json.Marshal(rule.Rules))
+	addRoute("GET", "/plugins", func(ctx *Context) {
+		ctx.SendJSON(createPlugins(ctx.Manager.Plugins.All()))
 	})
 
-	AddRoute("GET", "/plugins", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		plugins := createPlugins(c.Manager.Plugins.All())
-		buf, err := json.Marshal(plugins)
-		if err != nil {
-			replyWithError(w, 500, err.Error())
-			return
-		}
-		w.Write(buf)
+	addRoute("GET", "/scopes", func(ctx *Context) {
+		ctx.SendJSON(createScopes(ctx.Manager.Scopes()))
 	})
 
-	AddRoute("GET", "/scopes", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		scopes := createScopes(c.Manager.Scopes())
-		buf, err := json.Marshal(scopes)
-		if err != nil {
-			replyWithError(w, 500, err.Error())
-			return
-		}
-		w.Write(buf)
+	addRoute("GET", "/scopes/:scope", func(ctx *Context) {
+		ctx.SendJSON(createScope(ctx.Scope))
 	})
 
-	AddRoute("GET", "/scopes/:scope", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		id := req.URL.Query().Get(":scope")
-
-		scope := c.Manager.GetScope(id)
-		if scope == nil {
-			notFound(w, "Scope not found")
-			return
-		}
-
-		data, err := encodeJSON(createScope(scope))
-		if err != nil {
-			replyWithError(w, 500, err.Error())
-			return
-		}
-		w.Write(data)
+	addRoute("GET", "/instances", func(ctx *Context) {
+		ctx.SendJSON(createInstances(ctx.Manager.Instances(), ctx))
 	})
 
-	AddRoute("GET", "/instances", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		buf, err := json.Marshal(c.Manager.instances)
-		if err != nil {
-			replyWithError(w, 500, err.Error())
-			return
-		}
-		w.Write(buf)
+	addRoute("GET", "/instances/:instance", func(ctx *Context) {
+		ctx.SendJSON(createInstance(ctx.Instance, ctx))
 	})
 
-	AddRoute("GET", "/instances/:instance", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		id := req.URL.Query().Get(":instance")
-
-		instance := c.Manager.GetInstance(id)
-		if instance == nil {
-			notFound(w, "Instance not found")
-			return
+	addRoute("DELETE", "/instances/:instance", func(ctx *Context) {
+		if ctx.Manager.RemoveInstance(ctx.Instance.ID) {
+			ctx.SendNoContent()
+		} else {
+			ctx.SendError(500, "Cannot remove instance")
 		}
-
-		links := JSONLinks{
-			"self":   "/instances/" + id,
-			"scopes": "/instances/" + id + "/scopes",
-		}
-
-		node := JSONInstance{
-			ID:          instance.ID,
-			Name:        instance.Name,
-			Description: instance.Description,
-			Links:       links,
-		}
-
-		node.Scopes = createScopes(instance.GetScopes())
-
-		buf, err := json.Marshal(node)
-		if err != nil {
-			replyWithError(w, 500, err.Error())
-			return
-		}
-
-		w.Write(buf)
 	})
 
-	AddRoute("GET", "/instances/:instance/scopes", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		id := req.URL.Query().Get(":instance")
-
-		instance := c.Manager.GetInstance(id)
-		if instance == nil {
-			notFound(w, "Instance not found")
-			return
-		}
-
-		buf, err := json.Marshal(createScopes(instance.GetScopes()))
-		if err != nil {
-			replyWithError(w, 500, err.Error())
-			return
-		}
-
-		w.Write(buf)
+	addRoute("GET", "/instances/:instance/scopes", func(ctx *Context) {
+		ctx.SendJSON(createScopes(ctx.Instance.Scopes()))
 	})
 
-	AddRoute("GET", "/instances/:instance/scopes/:scope", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		id := req.URL.Query().Get(":instance")
-		scopeId := req.URL.Query().Get(":scope")
-
-		instance := c.Manager.GetInstance(id)
-		if instance == nil {
-			notFound(w, "Instance not found")
-			return
-		}
-
-		scope := instance.GetScope(scopeId)
-		if scope == nil {
-			notFound(w, "Scope not found")
-			return
-		}
-
-		buf, err := json.Marshal(createScope(scope))
-		if err != nil {
-			replyWithError(w, 500, err.Error())
-			return
-		}
-
-		w.Write(buf)
+	addRoute("GET", "/instances/:instance/scopes/:scope", func(ctx *Context) {
+		ctx.SendJSON(createScope(ctx.Scope))
 	})
 
-	AddRoute("GET", "/instances/:instance/scopes/:scope/plugins", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		id := req.URL.Query().Get(":instance")
-		scopeId := req.URL.Query().Get(":scope")
-
-		instance := c.Manager.GetInstance(id)
-		if instance == nil {
-			notFound(w, "Instance not found")
-			return
+	addRoute("DELETE", "/instances/:instance/scopes/:scope", func(ctx *Context) {
+		if ctx.Instance.RemoveScope(ctx.Scope.ID) {
+			ctx.SendNoContent()
+		} else {
+			ctx.SendError(500, "Cannot remove scope")
 		}
-
-		scope := instance.GetScope(scopeId)
-		if scope == nil {
-			notFound(w, "Scope not found")
-			return
-		}
-
-		buf, err := json.Marshal(createPlugins(scope.Plugins.All()))
-		if err != nil {
-			replyWithError(w, 500, err.Error())
-			return
-		}
-
-		w.Write(buf)
 	})
 
-	AddRoute("GET", "/instances/:instance/scopes/:scope/plugins/:plugin", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		id := req.URL.Query().Get(":instance")
-		scopeId := req.URL.Query().Get(":scope")
-		pluginId := req.URL.Query().Get(":plugin")
-
-		instance := c.Manager.GetInstance(id)
-		if instance == nil {
-			notFound(w, "Instance not found")
-			return
-		}
-
-		scope := instance.GetScope(scopeId)
-		if scope == nil {
-			notFound(w, "Scope not found")
-			return
-		}
-
-		plugin := scope.Plugins.Get(pluginId)
-		if plugin == nil {
-			notFound(w, "Plugin not found")
-			return
-		}
-
-		buf, err := json.Marshal(createPlugin(plugin))
-		if err != nil {
-			replyWithError(w, 500, err.Error())
-			return
-		}
-
-		w.Write(buf)
+	addRoute("GET", "/instances/:instance/scopes/:scope/plugins", func(ctx *Context) {
+		ctx.SendJSON(createPlugins(ctx.Scope.Plugins.All()))
 	})
 
-	AddRoute("GET", "/instances/:instance/scopes/:scope/rules", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		id := req.URL.Query().Get(":instance")
-		scopeId := req.URL.Query().Get(":scope")
-
-		instance := c.Manager.GetInstance(id)
-		if instance == nil {
-			notFound(w, "Instance not found")
-			return
-		}
-
-		scope := instance.GetScope(scopeId)
-		if scope == nil {
-			notFound(w, "Scope not found")
-			return
-		}
-
-		buf, err := json.Marshal(createRules(scope))
-		if err != nil {
-			replyWithError(w, 500, err.Error())
-			return
-		}
-
-		w.Write(buf)
+	addRoute("GET", "/instances/:instance/scopes/:scope/plugins/:plugin", func(ctx *Context) {
+		ctx.SendJSON(createPlugin(ctx.Plugin))
 	})
 
-	AddRoute("GET", "/instances/:instance/scopes/:scope/rules/:rule", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		id := req.URL.Query().Get(":instance")
-		scopeId := req.URL.Query().Get(":scope")
-		ruleId := req.URL.Query().Get(":rule")
-
-		instance := c.Manager.GetInstance(id)
-		if instance == nil {
-			notFound(w, "Instance not found")
-			return
+	addRoute("DELETE", "/instances/:instance/scopes/:scope/plugins/:plugin", func(ctx *Context) {
+		if ctx.Scope.RemovePlugin(ctx.Plugin.ID()) {
+			ctx.SendNoContent()
+		} else {
+			ctx.SendError(500, "Cannot remove plugin")
 		}
+	})
 
-		scope := instance.GetScope(scopeId)
-		if scope == nil {
-			notFound(w, "Scope not found")
-			return
+	addRoute("GET", "/instances/:instance/scopes/:scope/rules", func(ctx *Context) {
+		ctx.SendJSON(createRules(ctx.Scope))
+	})
+
+	addRoute("GET", "/instances/:instance/scopes/:scope/rules/:rule", func(ctx *Context) {
+		ctx.SendJSON(createRule(ctx.Rule))
+	})
+
+	addRoute("DELETE", "/instances/:instance/scopes/:scope/rules/:rule", func(ctx *Context) {
+		if ctx.Scope.RemoveRule(ctx.Rule.ID()) {
+			ctx.SendNoContent()
+		} else {
+			ctx.SendError(500, "Cannot remove rule")
 		}
-
-		rule := scope.Rules.Get(ruleId)
-		if rule == nil {
-			notFound(w, "Plugin not found")
-			return
-		}
-
-		buf, err := json.Marshal(createRule(rule))
-		if err != nil {
-			replyWithError(w, 500, err.Error())
-			return
-		}
-
-		w.Write(buf)
 	})
 }
 
-func encodeJSON(data interface{}) ([]byte, error) {
-	buf := &bytes.Buffer{}
-	err := json.NewEncoder(buf).Encode(data)
-	return buf.Bytes(), err
+func createInstance(instance *Instance, ctx *Context) JSONInstance {
+	return JSONInstance{
+		ID:          instance.ID,
+		Name:        instance.Name,
+		Description: instance.Description,
+		Scopes:      createScopes(instance.Scopes()),
+	}
+}
+
+func createInstances(instances []*Instance, ctx *Context) []JSONInstance {
+	list := []JSONInstance{}
+	for _, instance := range instances {
+		list = append(list, createInstance(instance, ctx))
+	}
+	return list
 }
 
 func createScope(scope *Scope) JSONScope {
@@ -412,7 +219,7 @@ func createRules(scope *Scope) []JSONRule {
 }
 
 func createPlugins(plugins []plugin.Plugin) []JSONPlugin {
-	list := make([]JSONPlugin, len(plugins))
+	list := []JSONPlugin{}
 	for i, plugin := range plugins {
 		list[i] = createPlugin(plugin)
 	}

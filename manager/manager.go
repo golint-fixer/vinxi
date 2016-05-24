@@ -50,7 +50,7 @@ func (m *Manager) Manage(name, description string, proxy *vinxi.Vinxi) *Instance
 	// Register manager middleware in the proxy
 	proxy.Layer.UsePriority(layer.RequestPhase, layer.Tail, m)
 
-	// Register the instance specific middleware layer
+	// Register the vinxiinstance specific middleware layer
 	proxy.Layer.UsePriority(layer.RequestPhase, layer.Tail, instance)
 
 	m.im.Lock()
@@ -158,6 +158,13 @@ func (m *Manager) RemoveScope(name string) bool {
 	return false
 }
 
+// Instances returns the registered vinxi instances in the manager.
+func (m *Manager) Instances() []*Instance {
+	m.im.Lock()
+	defer m.im.Unlock()
+	return m.instances
+}
+
 // GetInstance finds and returns a vinxi managed instance.
 func (m *Manager) GetInstance(name string) *Instance {
 	m.im.Lock()
@@ -192,7 +199,7 @@ func (m *Manager) RemoveInstance(name string) bool {
 func (m *Manager) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Handler) {
 	next := h
 
-	// Build the scopes layer
+	// Build the scope handlers call chain
 	m.sm.RLock()
 	for _, scope := range m.scopes {
 		next = http.HandlerFunc(scope.HandleHTTP(next))

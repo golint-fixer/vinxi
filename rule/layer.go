@@ -68,6 +68,13 @@ func (l *Layer) All() []Rule {
 	return l.pool
 }
 
+// Flush removes all the registered rules.
+func (l *Layer) Flush() {
+	l.rwm.Lock()
+	l.pool = []Rule{}
+	l.rwm.Unlock()
+}
+
 // Match matches the given http.Request agains the registered rules.
 // If all the rules passes it will return true, otherwise false.
 func (l *Layer) Match(r *http.Request) bool {
