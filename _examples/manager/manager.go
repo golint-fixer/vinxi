@@ -14,27 +14,38 @@ import (
 const port = 3100
 
 func main() {
-	// Creates a new vinxi proxy
-	v := vinxi.New()
-
 	// Creates a new manager for the vinxi proxy
 	mgr := manager.New()
-	mgr.Manage("default", "This a default server instance", v)
+
+	// Creates a new vinxi proxy and manage it
+	v := vinxi.New()
+	instance := mgr.Manage("default", "This a default proxy", v)
+
+	// Instance level scope
+	scope := instance.NewScope("custom", "Custom scope")
+	scope.UseRule(rule.Init("path", map[string]interface{}{"path": "/image/(.*)"}))
+
+	plu, err := plugin.Init("forward", config.Config{"url": "http://httpbin.org"})
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+		return
+	}
+	scope.UsePlugin(plu)
 
 	// Starts default admin HTTP server
 	go mgr.ServeDefault()
 
 	// Register scopes
-	scope := mgr.NewScope("default", "Default scope")
-	scope.UseRule(rule.Init("path", map[string]interface{}{"path": "/(.*)"}))
+	scope = mgr.NewScope("default", "Default scope")
+	scope.UseRule(rule.Init("path", map[string]interface{}{"path": "/vinxi/(.*)"}))
 	scope.UseRule(rule.Init("vhost", map[string]interface{}{"host": "localhost"}))
 
-	plugin, err := plugin.Init("static", config.Config{"path": "/Users/h2non/Projects/vinxi"})
+	plu, err = plugin.Init("static", config.Config{"path": "/Users/h2non/Projects/vinxi"})
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
 		return
 	}
-	scope.UsePlugin(plugin)
+	scope.UsePlugin(plu)
 
 	// Registers a simple middleware handler
 	v.Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
@@ -43,7 +54,7 @@ func main() {
 	})
 
 	// Forward traffic to httpbin.org by default
-	v.Forward("http://httpbin.org")
+	v.Forward("http://www.apache.org")
 
 	fmt.Printf("Server listening on port: %d\n", port)
 	_, err = v.ListenAndServe(vinxi.ServerOptions{Port: port})

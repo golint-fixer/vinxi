@@ -48,8 +48,21 @@ func (l *Layer) Remove(id string) bool {
 	return false
 }
 
-// Get returns the slice of registered rules.
-func (l *Layer) Get() []Rule {
+// Get finds and treturns a rule instance.
+func (l *Layer) Get(name string) Rule {
+	l.rwm.Lock()
+	defer l.rwm.Unlock()
+
+	for _, rule := range l.pool {
+		if rule.ID() == name || rule.Name() == name {
+			return rule
+		}
+	}
+	return nil
+}
+
+// All returns the slice of registered rules.
+func (l *Layer) All() []Rule {
 	l.rwm.Lock()
 	defer l.rwm.Unlock()
 	return l.pool

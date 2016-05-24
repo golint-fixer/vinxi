@@ -31,8 +31,21 @@ func (l *Layer) Len() int {
 	return len(l.pool)
 }
 
-// Get returns an slice of the registered plugins.
-func (l *Layer) Get() []Plugin {
+// Get finds and returns a plugin instance.
+func (l *Layer) Get(name string) Plugin {
+	l.rwm.Lock()
+	defer l.rwm.Unlock()
+
+	for _, plugin := range l.pool {
+		if plugin.ID() == name || plugin.Name() == name {
+			return plugin
+		}
+	}
+	return nil
+}
+
+// All returns an slice of the registered plugins.
+func (l *Layer) All() []Plugin {
 	l.rwm.Lock()
 	defer l.rwm.Unlock()
 	return l.pool

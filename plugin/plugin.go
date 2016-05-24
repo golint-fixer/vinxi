@@ -19,8 +19,10 @@ type Plugin interface {
 	// Description is used to retrieve a human friendly
 	// description of what the plugin does.
 	Description() string
-	// Config is used to retrieve the rule config.
+	// Config is used to retrieve the user defined plugin config.
 	Config() config.Config
+	// Metadata is used to retrieve the plugin metadata.
+	Metadata() config.Config
 	// HandleHTTP is used to run the plugin task.
 	// Note: add error reporting layer.
 	HandleHTTP(http.Handler) http.Handler
@@ -32,6 +34,7 @@ type plugin struct {
 	description string
 	handler     Handler
 	config      config.Config
+	metadata    config.Config
 }
 
 // New creates a new Plugin capable interface based on the
@@ -78,6 +81,12 @@ func (p *plugin) Description() string {
 // what the plugin does and for what it's designed.
 func (p *plugin) Config() config.Config {
 	return p.config
+}
+
+// Config returns the plugin human readable description about
+// what the plugin does and for what it's designed.
+func (p *plugin) Metadata() config.Config {
+	return p.metadata
 }
 
 // HandleHTTP implements the required plugin HTTP handler interface
