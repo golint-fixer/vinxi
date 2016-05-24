@@ -7,8 +7,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/dchest/uniuri"
-	"github.com/julienschmidt/httprouter"
+	"github.com/h2non/httprouter"
 	"gopkg.in/vinxi/vinxi.v0"
 	"gopkg.in/vinxi/vinxi.v0/config"
 	"gopkg.in/vinxi/vinxi.v0/layer"
@@ -19,14 +18,6 @@ import (
 	_ "gopkg.in/vinxi/vinxi.v0/plugins"
 	_ "gopkg.in/vinxi/vinxi.v0/rules"
 )
-
-type Instance struct {
-	ID          string `json:"id"`
-	Name        string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	scopes      []*Scope
-	instance    *vinxi.Vinxi
-}
 
 // Manager represents the vinxi proxy admin manager.
 type Manager struct {
@@ -58,11 +49,14 @@ func Manage(name, description string, proxy *vinxi.Vinxi) *Manager {
 // managed by the current manager instance.
 func (m *Manager) Manage(name, description string, proxy *vinxi.Vinxi) {
 	// Register manager middleware in the proxy
-	proxy.Layer.UsePriority("request", layer.Tail, m)
+	proxy.Layer.UsePriority(layer.RequestPhase, layer.Tail, m)
 
 	// Register the managed Vinxi instance
-	instance := &Instance{ID: uniuri.New(), Name: name, Description: description, instance: proxy}
+	instance := NewInstance(name, description, proxy)
+
+	m.im.Lock()
 	m.instances = append(m.instances, instance)
+	m.im.Unlock()
 }
 
 // Use attaches a new middleware handler for incoming HTTP traffic.
@@ -197,8 +191,8 @@ func (m *Manager) configure() {
 
 	// Define route handlers
 	for _, r := range routes {
-		m.Router.Handler(r.Method, r.Path, r)
 		r.Manager = m // Expose manager instance in routes
+		m.Router.Handler(r.Method, r.Path, r)
 	}
 }
 
@@ -317,27 +311,25 @@ func init() {
 	AddRoute("GET", "/instances/:instance", func(w http.ResponseWriter, req *http.Request, c *Controller) {
 		buf := &bytes.Buffer{}
 		id := req.URL.Query().Get(":instance")
+		// panic("adasdasdsad: " + id)
 
 		mgr := c.Manager
-		for _, instance := range mgr.instances {
-			if instance.ID == id || instance.Name == id {
-				scopes := createScopes(instance.scopes)
-
-				err := json.NewEncoder(buf).Encode(scopes)
-				if err != nil {
-					w.WriteHeader(500)
-					w.Write([]byte(err.Error()))
-					return
-				}
-
-				w.Write(buf.Bytes())
-				return
-			}
+		instance := mgr.GetInstance(id)
+		if instance == nil {
+			w.WriteHeader(404)
+			w.Write([]byte("Not found"))
+			return
 		}
 
-		w.WriteHeader(404)
-		w.Write([]byte("Not found"))
-		return
+		scopes := createScopes(instance.GetScopes())
+		err := json.NewEncoder(buf).Encode(scopes)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+			return
+		}
+
+		w.Write(buf.Bytes())
 	})
 
 	AddRoute("GET", "/plugins", func(w http.ResponseWriter, req *http.Request, c *Controller) {

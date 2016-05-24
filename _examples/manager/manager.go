@@ -34,7 +34,6 @@ func main() {
 		fmt.Printf("Error: %s\n", err)
 		return
 	}
-
 	scope.UsePlugin(plugin)
 
 	// Registers a simple middleware handler
