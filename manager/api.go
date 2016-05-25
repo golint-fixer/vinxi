@@ -10,6 +10,7 @@ import (
 	"gopkg.in/vinxi/vinxi.v0/rule"
 )
 
+// routes stores the registered routes.
 var routes = []*Controller{}
 
 func addRoute(method, path string, fn ControllerHandler) {
@@ -21,6 +22,7 @@ func addRoute(method, path string, fn ControllerHandler) {
 	routes = append(routes, route)
 }
 
+// JSONRule represents the Rule entity for JSON serialization.
 type JSONRule struct {
 	ID          string        `json:"id"`
 	Name        string        `json:"name,omitempty"`
@@ -29,6 +31,7 @@ type JSONRule struct {
 	Metadata    config.Config `json:"metadata,omitempty"`
 }
 
+// JSONPlugin represents the Plugin entity for JSON serialization.
 type JSONPlugin struct {
 	ID          string        `json:"id"`
 	Name        string        `json:"name,omitempty"`
@@ -38,6 +41,7 @@ type JSONPlugin struct {
 	Metadata    config.Config `json:"metadata,omitempty"`
 }
 
+// JSONScope represents the Scope entity for JSON serialization.
 type JSONScope struct {
 	ID      string       `json:"id"`
 	Name    string       `json:"name,omitempty"`
@@ -45,6 +49,7 @@ type JSONScope struct {
 	Plugins []JSONPlugin `json:"plugins"`
 }
 
+// JSONInstance represents the Instance entity for JSON serialization.
 type JSONInstance struct {
 	ID          string          `json:"id"`
 	Name        string          `json:"name,omitempty"`
@@ -103,6 +108,10 @@ func init() {
 		ctx.SendJSON(createPlugins(ctx.Manager.Plugins.All()))
 	})
 
+	addRoute("GET", "/plugins/:plugin", func(ctx *Context) {
+		ctx.SendJSON(createPlugin(ctx.Plugin))
+	})
+
 	addRoute("GET", "/scopes", func(ctx *Context) {
 		ctx.SendJSON(createScopes(ctx.Manager.Scopes()))
 	})
@@ -112,11 +121,11 @@ func init() {
 	})
 
 	addRoute("GET", "/instances", func(ctx *Context) {
-		ctx.SendJSON(createInstances(ctx.Manager.Instances(), ctx))
+		ctx.SendJSON(createInstances(ctx.Manager.Instances()))
 	})
 
 	addRoute("GET", "/instances/:instance", func(ctx *Context) {
-		ctx.SendJSON(createInstance(ctx.Instance, ctx))
+		ctx.SendJSON(createInstance(ctx.Instance))
 	})
 
 	addRoute("DELETE", "/instances/:instance", func(ctx *Context) {
@@ -176,7 +185,7 @@ func init() {
 	})
 }
 
-func createInstance(instance *Instance, ctx *Context) JSONInstance {
+func createInstance(instance *Instance) JSONInstance {
 	return JSONInstance{
 		ID:          instance.ID,
 		Name:        instance.Name,
@@ -185,10 +194,10 @@ func createInstance(instance *Instance, ctx *Context) JSONInstance {
 	}
 }
 
-func createInstances(instances []*Instance, ctx *Context) []JSONInstance {
+func createInstances(instances []*Instance) []JSONInstance {
 	list := []JSONInstance{}
 	for _, instance := range instances {
-		list = append(list, createInstance(instance, ctx))
+		list = append(list, createInstance(instance))
 	}
 	return list
 }
@@ -203,25 +212,25 @@ func createScope(scope *Scope) JSONScope {
 }
 
 func createScopes(scopes []*Scope) []JSONScope {
-	buf := make([]JSONScope, len(scopes))
-	for i, scope := range scopes {
-		buf[i] = createScope(scope)
+	list := []JSONScope{}
+	for _, scope := range scopes {
+		list = append(list, createScope(scope))
 	}
-	return buf
+	return list
 }
 
 func createRules(scope *Scope) []JSONRule {
-	rules := make([]JSONRule, scope.Rules.Len())
-	for i, rule := range scope.Rules.All() {
-		rules[i] = createRule(rule)
+	rules := []JSONRule{}
+	for _, rule := range scope.Rules.All() {
+		rules = append(rules, createRule(rule))
 	}
 	return rules
 }
 
 func createPlugins(plugins []plugin.Plugin) []JSONPlugin {
 	list := []JSONPlugin{}
-	for i, plugin := range plugins {
-		list[i] = createPlugin(plugin)
+	for _, plugin := range plugins {
+		list = append(list, createPlugin(plugin))
 	}
 	return list
 }
