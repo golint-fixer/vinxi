@@ -32,7 +32,7 @@ type Field struct {
 	Type        string      `json:"type,omitempty"`
 	Description string      `json:"description,omitempty"`
 	Mandatory   bool        `json:"mandatory,omitempty"`
-	Example     string      `json:"example,omitempty"`
+	Examples    []string    `json:"examples,omitempty"`
 	Default     interface{} `json:"default,omitempty"`
 	Validator   Validator   `json:"-"`
 }

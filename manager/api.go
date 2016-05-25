@@ -79,7 +79,7 @@ func init() {
 			},
 		}
 
-		ctx.SendJSON(info)
+		ctx.Send(info)
 	})
 
 	addRoute("GET", "/catalog", func(ctx *Context) {
@@ -101,31 +101,145 @@ func init() {
 			Plugins: plugins,
 		}
 
-		ctx.SendJSON(catalog)
+		ctx.Send(catalog)
 	})
 
 	addRoute("GET", "/plugins", func(ctx *Context) {
-		ctx.SendJSON(createPlugins(ctx.Manager.Plugins.All()))
+		ctx.Send(createPlugins(ctx.Manager.Plugins.All()))
+	})
+
+	addRoute("POST", "/plugins", func(ctx *Context) {
+		type data struct {
+			Name   string        `json:"name"`
+			Params config.Config `json:"config"`
+		}
+
+		var plu data
+		err := ctx.ParseBody(&plu)
+		if err != nil {
+			return
+		}
+
+		if plu.Name == "" {
+			ctx.SendError(400, "Missing required param: name")
+			return
+		}
+
+		factory := plugin.Get(plu.Name)
+		if factory == nil {
+			ctx.SendNotFound("Plugin not found")
+			return
+		}
+
+		instance, err := factory(plu.Params)
+		if err != nil {
+			ctx.SendError(400, "Cannot create plugin: "+err.Error())
+			return
+		}
+
+		ctx.Manager.UsePlugin(instance)
+		ctx.Send(createPlugin(instance))
 	})
 
 	addRoute("GET", "/plugins/:plugin", func(ctx *Context) {
-		ctx.SendJSON(createPlugin(ctx.Plugin))
+		ctx.Send(createPlugin(ctx.Plugin))
+	})
+
+	addRoute("DELETE", "/plugins/:plugin", func(ctx *Context) {
+		if ctx.Manager.RemoveScope(ctx.Scope.ID) {
+			ctx.SendNoContent()
+		} else {
+			ctx.SendError(500, "Cannot remove scope")
+		}
 	})
 
 	addRoute("GET", "/scopes", func(ctx *Context) {
-		ctx.SendJSON(createScopes(ctx.Manager.Scopes()))
+		ctx.Send(createScopes(ctx.Manager.Scopes()))
+	})
+
+	addRoute("POST", "/scopes", func(ctx *Context) {
+		type data struct {
+			Name   string        `json:"name"`
+			Params config.Config `json:"config"`
+		}
+
+		var plu data
+		err := ctx.ParseBody(&plu)
+		if err != nil {
+			return
+		}
+
+		if plu.Name == "" {
+			ctx.SendError(400, "Missing required param: name")
+			return
+		}
+
+		factory := plugin.Get(plu.Name)
+		if factory == nil {
+			ctx.SendNotFound("Plugin not found")
+			return
+		}
+
+		instance, err := factory(plu.Params)
+		if err != nil {
+			ctx.SendError(400, "Cannot create plugin: "+err.Error())
+			return
+		}
+
+		ctx.Manager.UsePlugin(instance)
+		ctx.Send(createPlugin(instance))
 	})
 
 	addRoute("GET", "/scopes/:scope", func(ctx *Context) {
-		ctx.SendJSON(createScope(ctx.Scope))
+		ctx.Send(createScope(ctx.Scope))
+	})
+
+	addRoute("DELETE", "/scopes/:scope", func(ctx *Context) {
+		if ctx.Manager.RemoveScope(ctx.Scope.ID) {
+			ctx.SendNoContent()
+		} else {
+			ctx.SendError(500, "Cannot remove scope")
+		}
+	})
+
+	addRoute("GET", "/scopes/:scope/plugins", func(ctx *Context) {
+		ctx.Send(createPlugins(ctx.Scope.Plugins.All()))
+	})
+
+	addRoute("GET", "/scopes/:scope/plugins/:plugin", func(ctx *Context) {
+		ctx.Send(createPlugin(ctx.Plugin))
+	})
+
+	addRoute("DELETE", "/scopes/:scope/plugins/:plugin", func(ctx *Context) {
+		if ctx.Scope.RemovePlugin(ctx.Plugin.ID()) {
+			ctx.SendNoContent()
+		} else {
+			ctx.SendError(500, "Cannot remove plugin")
+		}
+	})
+
+	addRoute("GET", "/scopes/:scope/rules", func(ctx *Context) {
+		ctx.Send(createRules(ctx.Scope))
+	})
+
+	addRoute("GET", "/scopes/:scope/rules/:rule", func(ctx *Context) {
+		ctx.Send(createRule(ctx.Rule))
+	})
+
+	addRoute("DELETE", "/scopes/:scope/rules/:rule", func(ctx *Context) {
+		if ctx.Scope.RemoveRule(ctx.Rule.ID()) {
+			ctx.SendNoContent()
+		} else {
+			ctx.SendError(500, "Cannot remove rule")
+		}
 	})
 
 	addRoute("GET", "/instances", func(ctx *Context) {
-		ctx.SendJSON(createInstances(ctx.Manager.Instances()))
+		ctx.Send(createInstances(ctx.Manager.Instances()))
 	})
 
 	addRoute("GET", "/instances/:instance", func(ctx *Context) {
-		ctx.SendJSON(createInstance(ctx.Instance))
+		ctx.Send(createInstance(ctx.Instance))
 	})
 
 	addRoute("DELETE", "/instances/:instance", func(ctx *Context) {
@@ -137,11 +251,11 @@ func init() {
 	})
 
 	addRoute("GET", "/instances/:instance/scopes", func(ctx *Context) {
-		ctx.SendJSON(createScopes(ctx.Instance.Scopes()))
+		ctx.Send(createScopes(ctx.Instance.Scopes()))
 	})
 
 	addRoute("GET", "/instances/:instance/scopes/:scope", func(ctx *Context) {
-		ctx.SendJSON(createScope(ctx.Scope))
+		ctx.Send(createScope(ctx.Scope))
 	})
 
 	addRoute("DELETE", "/instances/:instance/scopes/:scope", func(ctx *Context) {
@@ -153,11 +267,11 @@ func init() {
 	})
 
 	addRoute("GET", "/instances/:instance/scopes/:scope/plugins", func(ctx *Context) {
-		ctx.SendJSON(createPlugins(ctx.Scope.Plugins.All()))
+		ctx.Send(createPlugins(ctx.Scope.Plugins.All()))
 	})
 
 	addRoute("GET", "/instances/:instance/scopes/:scope/plugins/:plugin", func(ctx *Context) {
-		ctx.SendJSON(createPlugin(ctx.Plugin))
+		ctx.Send(createPlugin(ctx.Plugin))
 	})
 
 	addRoute("DELETE", "/instances/:instance/scopes/:scope/plugins/:plugin", func(ctx *Context) {
@@ -169,11 +283,11 @@ func init() {
 	})
 
 	addRoute("GET", "/instances/:instance/scopes/:scope/rules", func(ctx *Context) {
-		ctx.SendJSON(createRules(ctx.Scope))
+		ctx.Send(createRules(ctx.Scope))
 	})
 
 	addRoute("GET", "/instances/:instance/scopes/:scope/rules/:rule", func(ctx *Context) {
-		ctx.SendJSON(createRule(ctx.Rule))
+		ctx.Send(createRule(ctx.Rule))
 	})
 
 	addRoute("DELETE", "/instances/:instance/scopes/:scope/rules/:rule", func(ctx *Context) {

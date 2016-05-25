@@ -2,6 +2,7 @@ package manager
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"gopkg.in/vinxi/vinxi.v0/plugin"
@@ -24,14 +25,31 @@ type Context struct {
 	Plugin   plugin.Plugin
 }
 
-// SendJSON is used to serialize and write the response as JSON.
-func (c *Context) SendJSON(data interface{}) {
+// ParseBody parses the body.
+func (c *Context) ParseBody(bind interface{}) error {
+	if c.Request.Header.Get("Content-Type") != "application/json" {
+		c.SendError(415, "Invalid content type. Must be application/json")
+		return errors.New("Invalid type")
+	}
+
+	decoder := json.NewDecoder(c.Request.Body)
+	return decoder.Decode(&bind)
+}
+
+// Send is used to serialize and write the response as JSON.
+func (c *Context) Send(data interface{}) {
+	c.SendStatus(200, data)
+}
+
+// SendStatus is used to serialize and write the response as JSON with custom status code.
+func (c *Context) SendStatus(status int, data interface{}) {
 	buf, err := json.Marshal(data)
 	if err != nil {
 		c.SendError(500, err.Error())
 		return
 	}
 	c.Response.Header().Set("Content-Type", "application/json")
+	c.Response.WriteHeader(status)
 	c.Response.Write(buf)
 }
 

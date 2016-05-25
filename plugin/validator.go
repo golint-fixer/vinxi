@@ -18,6 +18,19 @@ func getField(name string, params Params) (Field, bool) {
 // Validate is used to validate plugin params
 // and report the proper param specific error.
 func Validate(params Params, opts config.Config) error {
+	// Set defaults params
+	for _, param := range params {
+		// Set defaults
+		if param.Default != nil && !opts.Exists(param.Name) {
+			opts.Set(param.Name, param.Default)
+		}
+		// Validate mandatory params
+		if param.Mandatory && !opts.Exists(param.Name) {
+			return errors.New("Missing required param: " + param.Name)
+		}
+	}
+
+	// Validate params
 	for name, value := range opts {
 		field, exists := getField(name, params)
 		if !exists {

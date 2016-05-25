@@ -34,8 +34,8 @@ type Field struct {
 	Name        string      `json:"name,omitempty"`
 	Type        string      `json:"type,omitempty"`
 	Description string      `json:"description,omitempty"`
-	Example     string      `json:"example,omitempty"`
 	Mandatory   bool        `json:"mandatory,omitempty"`
+	Examples    []string    `json:"examples,omitempty"`
 	Default     interface{} `json:"default,omitempty"`
 	Validator   Validator   `json:"-"`
 }
@@ -54,8 +54,17 @@ func Init(name string, opts config.Config) (Plugin, error) {
 	return NewWithConfig(Plugins[name], opts)
 }
 
-// Get is used to find and retrieve a plugin factory function.
-func Get(name string) Factory {
+// Get is used to find and retrieve a plugin.
+func Get(name string) FactoryFunc {
+	plugin, ok := Plugins[name]
+	if ok {
+		return New(plugin)
+	}
+	return nil
+}
+
+// GetFactory is used to find and retrieve a plugin factory function.
+func GetFactory(name string) Factory {
 	plugin, ok := Plugins[name]
 	if ok {
 		return plugin.Factory

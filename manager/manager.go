@@ -22,9 +22,13 @@ type Manager struct {
 	scopes    []*Scope
 	im        sync.RWMutex
 	instances []*Instance
-	Plugins   *plugin.Layer
-	Server    *http.Server
-	Router    *httprouter.Router
+
+	// Plugins exposes the global plugin layer.
+	Plugins *plugin.Layer
+	// Server exposes the HTTP server used for the admin.
+	Server *http.Server
+	// Router exposes the manager HTTP router for the admin server.
+	Router *httprouter.Router
 }
 
 // New creates a new manager able to manage
