@@ -1,16 +1,18 @@
-- Strong modularity via hirarchical middleware layer.
-- Multiple middleware interfaces supported (e.g: http.Handler, Negroni, Alice...)
-- Built-in multiplexer for easy composition.
-- Idiomatic built on top of `net/http` package.
-- Default HTTP/S and WebSocket traffic forward.
-- Built-in middleware components (e.g: logging, metrics, service discovery, balancer...).
-- Tiny, hackable core.
-- Completely written in Go. No third-party dependencies.
-
-## Upcoming features
-
-- Admin HTTP API supporting dynamic configuration
-- Admin web UI
-- CLI interface
-- Dynamic configuration from multiple backends.
-- Plugin ecosystem.
+- Full-featured HTTP/S proxy.
+- Modular plugin-based design.
+- Middleware-oriented supporting multiple interfaces (e.g: http.Handler, Negroni, Alice...).
+- Good interpolarity with existent middleware from the community.
+- Idiomatic built on top of `net/http`.
+- Expressive and simple programmatic API.
+- Command-line interface.
+- Declarative configuration file.
+- Admin REST API.
+- Strong plugin ecosystem (e.g: metrics, service discovery, balancer...).
+- Admin web UI (coming soon).
+- Hot-reloading. Dynamic configuration in runtime.
+- Small, hackable API and core.
+- Fast (benchmarks coming soon).
+- WebSocket proxy (beta).
+- HTTP/2 support.
+- Just Go. No third-party dependencies.
+- Official Docker image.
