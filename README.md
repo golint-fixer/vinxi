@@ -4,16 +4,7 @@
 
 **Note**: vinxi is still beta under heavy development.
 
-## Features
-
-- Strong modularity via hirarchical middleware layer.
-- Multiple middleware interfaces supported (e.g: http.Handler, Negroni, Alice...)
-- Built-in multiplexer for easy composition.
-- Idiomatic built on top of `net/http` package.
-- Default HTTP/S and WebSocket traffic forward.
-- Built-in middleware components (e.g: logging, metrics, service discovery, balancer...).
-- Tiny, hackable core.
-- Completely written in Go. No dependencies.
+Visit [vinxi's website](http://vinxi.github.io) to get started.
 
 ## Installation
 
