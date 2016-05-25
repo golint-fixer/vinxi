@@ -17,4 +17,4 @@ application/json
 
 ### Security
 
-RESTful API admin interface
+RESTful API admin interface can be easily configured
