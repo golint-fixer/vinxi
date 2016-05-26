@@ -16,4 +16,4 @@ See [godoc](https://godoc.org/github.com/vinxi/vinxi/utils) reference.
 
 ## License
 
-Apache License 2.0
+MIT & Apache License 2.0 
