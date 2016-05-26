@@ -243,7 +243,7 @@ func init() {
 	})
 
 	addRoute("DELETE", "/instances/:instance", func(ctx *Context) {
-		if ctx.Manager.RemoveInstance(ctx.Instance.ID) {
+		if ctx.Manager.RemoveInstance(ctx.Instance.ID()) {
 			ctx.SendNoContent()
 		} else {
 			ctx.SendError(500, "Cannot remove instance")
@@ -299,17 +299,12 @@ func init() {
 	})
 }
 
-func createInstance(instance *Instance) JSONInstance {
-	return JSONInstance{
-		ID:          instance.ID,
-		Name:        instance.Name,
-		Description: instance.Description,
-		Scopes:      createScopes(instance.Scopes()),
-	}
+func createInstance(instance *Instance) *vinxi.Metadata {
+	return instance.Metadata()
 }
 
-func createInstances(instances []*Instance) []JSONInstance {
-	list := []JSONInstance{}
+func createInstances(instances []*Instance) []*vinxi.Metadata {
+	list := []*vinxi.Metadata{}
 	for _, instance := range instances {
 		list = append(list, createInstance(instance))
 	}

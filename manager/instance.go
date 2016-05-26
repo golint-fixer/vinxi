@@ -4,25 +4,32 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/dchest/uniuri"
 	"gopkg.in/vinxi/vinxi.v0"
 	"gopkg.in/vinxi/vinxi.v0/rule"
 )
 
 // Instance represents the manager instance level.
 type Instance struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name,omitempty"`
-	Description string                 `json:"description,omitempty"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-	sm          sync.RWMutex
-	scopes      []*Scope
-	instance    *vinxi.Vinxi
+	sm       sync.RWMutex
+	scopes   []*Scope
+	instance *vinxi.Vinxi
 }
 
 // NewInstance creates a new vinxi manager instance.
 func NewInstance(name, description string, proxy *vinxi.Vinxi) *Instance {
-	return &Instance{ID: uniuri.New(), Name: name, Description: description, instance: proxy}
+	proxy.Metadata.Name = name
+	proxy.Metadata.Description = description
+	return &Instance{instance: proxy}
+}
+
+// ID returns the instance unique identifier.
+func (i *Instance) ID() string {
+	return i.instance.Metadata.ID
+}
+
+// Metadata returns the vinxi instance metadata struct.
+func (i *Instance) Metadata() *vinxi.Metadata {
+	return i.instance.Metadata
 }
 
 // NewScope creates a new scope based on the given name
@@ -77,12 +84,6 @@ func (i *Instance) RemoveScope(name string) bool {
 	}
 
 	return false
-}
-
-// SetMeta defines a new metadata metadata field.
-// TODO protect by mutex
-func (i *Instance) SetMeta(key string, value interface{}) {
-	i.Metadata[key] = value
 }
 
 // HandleHTTP is triggered by the vinxi middleware layer on incoming HTTP request.

@@ -2,12 +2,15 @@ package vinxi
 
 import (
 	"net/http"
+	"os"
+	"runtime"
 
 	"gopkg.in/vinxi/vinxi.v0/context"
 	"gopkg.in/vinxi/vinxi.v0/forward"
 	"gopkg.in/vinxi/vinxi.v0/layer"
 	"gopkg.in/vinxi/vinxi.v0/mux"
 	"gopkg.in/vinxi/vinxi.v0/router"
+	"gopkg.in/vinxi/vinxi.v0/utils"
 )
 
 // DefaultForwarder stores the default http.Handler to be used to forward the traffic.
@@ -29,8 +32,41 @@ type Middleware interface {
 	SetParent(layer.Middleware)
 }
 
+// Metadata represents the vinxi instance metadata fields
+// used to store and retrieve generic and human friendly
+// proxy information, mostly useful for external management.
+type Metadata struct {
+	// ID stores the unique instance identifier.
+	ID string `json:"id"`
+	// Name stores the vinxi instance name identifier.
+	Name string `json:"name,omitempty"`
+	// Description stores the vinxi instance friendly description.
+	// This field is optional.
+	Description string `json:"description,omitempty"`
+	// Hostname stores the current hostname where vinxi is running.
+	// This is platform specific and could be empty.
+	Hostname string `json:"hostname,omitempty"`
+	// Platform stores the current runtime platform.
+	Platform string `json:"platform,omitempty"`
+	// ServerOptions stores the http.Server init options for further reference.
+	ServerOptions ServerOptions `json:"server,omitempty"`
+}
+
+// NewMetadata creates a new vinxi instance metadata instance
+// with default fields based on the runtime environment.
+func NewMetadata() *Metadata {
+	hostname, _ := os.Hostname()
+	return &Metadata{
+		ID:       utils.NewID(),
+		Hostname: hostname,
+		Platform: runtime.GOOS,
+	}
+}
+
 // Vinxi represents the vinxi proxy layer.
 type Vinxi struct {
+	// Medata stores the vinxi instance specific metadata.
+	Metadata *Metadata
 	// Layer stores the proxy level middleware layer.
 	Layer *layer.Layer
 	// Router stores the built-in router.
@@ -39,7 +75,7 @@ type Vinxi struct {
 
 // New creates a new vinxi proxy layer with default fields.
 func New() *Vinxi {
-	v := &Vinxi{Layer: layer.New(), Router: router.New()}
+	v := &Vinxi{Layer: layer.New(), Router: router.New(), Metadata: NewMetadata()}
 	// Bind router with parent layer
 	v.Router.SetParent(v.Layer)
 	// Register the router in the middleware tail (this should change in the future)
@@ -143,6 +179,7 @@ func (v *Vinxi) SetParent(parent layer.Middleware) {
 // NewServer creates a new http.Server.
 func (v *Vinxi) NewServer(opts ServerOptions) *Server {
 	srv := NewServer(opts)
+	v.Metadata.ServerOptions = opts
 	v.BindServer(srv.Server)
 	return srv
 }
@@ -150,8 +187,7 @@ func (v *Vinxi) NewServer(opts ServerOptions) *Server {
 // ListenAndServe creates a new http.Server and starts listening
 // on the network based on the given server options.
 func (v *Vinxi) ListenAndServe(opts ServerOptions) (*Server, error) {
-	srv := NewServer(opts)
-	v.BindServer(srv.Server)
+	srv := v.NewServer(opts)
 	return srv, srv.Listen()
 }
 

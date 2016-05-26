@@ -57,6 +57,7 @@ func (m *Manager) Manage(name, description string, proxy *vinxi.Vinxi) *Instance
 	// Register the vinxiinstance specific middleware layer
 	proxy.Layer.UsePriority(layer.RequestPhase, layer.Tail, instance)
 
+	// Register instance
 	m.im.Lock()
 	m.instances = append(m.instances, instance)
 	m.im.Unlock()
@@ -105,7 +106,7 @@ func (m *Manager) NewScope(name, description string) *Scope {
 
 // NewScope creates a new default scope.
 func (m *Manager) NewDefaultScope(rules ...rule.Rule) *Scope {
-	scope := m.NewScope("default", "Default generic scope")
+	scope := m.NewScope("default", "Default scope")
 	scope.UseRule(rules...)
 	return scope
 }
@@ -175,7 +176,7 @@ func (m *Manager) GetInstance(name string) *Instance {
 	defer m.im.Unlock()
 
 	for _, instance := range m.instances {
-		if instance.ID == name || instance.Name == name {
+		if instance.ID() == name || instance.Metadata().Name == name {
 			return instance
 		}
 	}
@@ -190,7 +191,7 @@ func (m *Manager) RemoveInstance(name string) bool {
 	defer m.im.Unlock()
 
 	for i, instance := range m.instances {
-		if instance.ID == name || instance.Name == name {
+		if instance.ID() == name || instance.Metadata().Name == name {
 			m.instances = append(m.instances[:i], m.instances[i+1:]...)
 			return true
 		}
