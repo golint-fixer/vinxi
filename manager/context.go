@@ -9,10 +9,6 @@ import (
 	"gopkg.in/vinxi/vinxi.v0/rule"
 )
 
-// ControllerHandler represents HTTP controller handler function
-// interface used in routes.
-type ControllerHandler func(*Context)
-
 // Context is used to share request context entities
 // across controllers.
 type Context struct {
@@ -80,67 +76,4 @@ func (c *Context) SendNoContent() {
 // SendNoContent replies with 204 status code.
 func (c *Context) SendNotFound(message string) {
 	c.SendError(404, message)
-}
-
-// Controller represents a route handler.
-type Controller struct {
-	Path    string
-	Method  string
-	Manager *Manager
-	Handler ControllerHandler
-}
-
-// ServeHTTP implements the http.HandlerFunc interface.
-func (c *Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := &Context{Manager: c.Manager, Request: r, Response: w}
-	c.handle(ctx)
-}
-
-func (c *Controller) handle(ctx *Context) {
-	instanceId := ctx.Request.URL.Query().Get(":instance")
-	if instanceId != "" {
-		ctx.Instance = ctx.Manager.GetInstance(instanceId)
-		if ctx.Instance == nil {
-			ctx.SendNotFound("Instance not found")
-			return
-		}
-	}
-
-	scopeId := ctx.Request.URL.Query().Get(":scope")
-	if scopeId != "" {
-		if ctx.Instance != nil {
-			ctx.Scope = ctx.Instance.GetScope(scopeId)
-		} else {
-			ctx.Scope = ctx.Manager.GetScope(scopeId)
-		}
-		if ctx.Scope == nil {
-			ctx.SendNotFound("Scope not found")
-			return
-		}
-	}
-
-	pluginId := ctx.Request.URL.Query().Get(":plugin")
-	if pluginId != "" {
-		if ctx.Scope != nil {
-			ctx.Plugin = ctx.Scope.Plugins.Get(pluginId)
-		} else {
-			ctx.Plugin = ctx.Manager.GetPlugin(pluginId)
-		}
-		if ctx.Plugin == nil {
-			ctx.SendNotFound("Plugin not found")
-			return
-		}
-	}
-
-	ruleId := ctx.Request.URL.Query().Get(":rule")
-	if ruleId != "" && ctx.Scope != nil {
-		ctx.Rule = ctx.Scope.Rules.Get(ruleId)
-		if ctx.Rule == nil {
-			ctx.SendNotFound("Rule not found")
-			return
-		}
-	}
-
-	// Finally run the router if all path validations are ok
-	c.Handler(ctx)
 }

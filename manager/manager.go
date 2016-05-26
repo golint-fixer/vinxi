@@ -17,7 +17,6 @@ import (
 
 // Manager represents the vinxi proxy admin manager.
 type Manager struct {
-	layer     *layer.Layer
 	sm        sync.RWMutex
 	scopes    []*Scope
 	im        sync.RWMutex
@@ -27,6 +26,8 @@ type Manager struct {
 	Plugins *plugin.Layer
 	// Server exposes the HTTP server used for the admin.
 	Server *http.Server
+	// Layer stores the manager internal middleware layer.
+	Layer *layer.Layer
 	// Router exposes the manager HTTP router for the admin server.
 	Router *httprouter.Router
 }
@@ -34,7 +35,7 @@ type Manager struct {
 // New creates a new manager able to manage
 // and configure multiple vinxi proxy instance.
 func New() *Manager {
-	return &Manager{layer: layer.New(), Plugins: plugin.NewLayer(), Router: httprouter.New()}
+	return &Manager{Layer: layer.New(), Plugins: plugin.NewLayer(), Router: httprouter.New()}
 }
 
 // Manage creates a new empty manage and
@@ -67,17 +68,17 @@ func (m *Manager) Manage(name, description string, proxy *vinxi.Vinxi) *Instance
 
 // Use attaches a new middleware handler for incoming HTTP traffic.
 func (m *Manager) Use(handler ...interface{}) {
-	m.layer.Use(layer.RequestPhase, handler...)
+	m.Layer.Use(layer.RequestPhase, handler...)
 }
 
 // UsePhase attaches a new middleware handler to a specific phase.
 func (m *Manager) UsePhase(phase string, handler ...interface{}) {
-	m.layer.Use(phase, handler...)
+	m.Layer.Use(phase, handler...)
 }
 
 // UseFinalHandler uses a new middleware handler function as final handler.
 func (m *Manager) UseFinalHandler(fn http.Handler) {
-	m.layer.UseFinalHandler(fn)
+	m.Layer.UseFinalHandler(fn)
 }
 
 // ListenAndServe creates a new admin HTTP server and starts listening on
@@ -202,6 +203,7 @@ func (m *Manager) RemoveInstance(name string) bool {
 
 // HandleHTTP is triggered by the vinxi middleware layer on incoming HTTP request.
 func (m *Manager) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Handler) {
+	// Declare the final handler in the call chain
 	next := h
 
 	// Build the scope handlers call chain
@@ -218,7 +220,7 @@ func (m *Manager) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Hand
 // serveHTTP is used to handle HTTP traffic via admin API.
 func (m *Manager) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	// trigger middleware layer first, then the router
-	m.layer.Run(layer.RequestPhase, w, r, m.Router)
+	m.Layer.Run(layer.RequestPhase, w, r, m.Router)
 }
 
 // configure is used to configure the HTTP API.
