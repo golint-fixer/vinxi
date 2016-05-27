@@ -22,20 +22,27 @@ type Manager struct {
 	im        sync.RWMutex
 	instances []*Instance
 
-	// Plugins exposes the global plugin layer.
+	// AdminPlugins stores the HTTP admin server plugins.
+	AdminPlugins *plugin.Layer
+	// Plugins stores the global plugin layer.
 	Plugins *plugin.Layer
-	// Server exposes the HTTP server used for the admin.
+	// Server stores the HTTP server used for the admin.
 	Server *http.Server
 	// Layer stores the manager internal middleware layer.
 	Layer *layer.Layer
-	// Router exposes the manager HTTP router for the admin server.
+	// Router stores the manager HTTP router for the admin server.
 	Router *httprouter.Router
 }
 
 // New creates a new manager able to manage
 // and configure multiple vinxi proxy instance.
 func New() *Manager {
-	return &Manager{Layer: layer.New(), Plugins: plugin.NewLayer(), Router: httprouter.New()}
+	return &Manager{
+		Layer:        layer.New(),
+		Router:       httprouter.New(),
+		Plugins:      plugin.NewLayer(),
+		AdminPlugins: plugin.NewLayer(),
+	}
 }
 
 // Manage creates a new empty manage and
@@ -55,7 +62,7 @@ func (m *Manager) Manage(name, description string, proxy *vinxi.Vinxi) *Instance
 	// Register manager middleware in the proxy
 	proxy.Layer.UsePriority(layer.RequestPhase, layer.Tail, m)
 
-	// Register the vinxiinstance specific middleware layer
+	// Register the vinxi instance specific middleware layer
 	proxy.Layer.UsePriority(layer.RequestPhase, layer.Tail, instance)
 
 	// Register instance
@@ -79,6 +86,11 @@ func (m *Manager) UsePhase(phase string, handler ...interface{}) {
 // UseFinalHandler uses a new middleware handler function as final handler.
 func (m *Manager) UseFinalHandler(fn http.Handler) {
 	m.Layer.UseFinalHandler(fn)
+}
+
+// UseAdminPlugin registers one or multiple plugins at manager admin level.
+func (m *Manager) UseAdminPlugin(plugins ...plugin.Plugin) {
+	m.AdminPlugins.Use(plugins...)
 }
 
 // ListenAndServe creates a new admin HTTP server and starts listening on

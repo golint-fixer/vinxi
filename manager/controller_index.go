@@ -29,6 +29,7 @@ func (IndexController) Get(ctx *Context) {
 			"plugins":   "/plugins",
 			"scopes":    "/scopes",
 			"instances": "/instances",
+			"manager":   "/manager",
 		},
 	}
 
@@ -55,4 +56,16 @@ func (IndexController) Catalog(ctx *Context) {
 	}
 
 	ctx.Send(catalog)
+}
+
+func (IndexController) Manager(ctx *Context) {
+	info := struct {
+		Links map[string]string `json:"links"`
+	}{
+		Links: map[string]string{
+			"plugins": "/manager/plugins",
+		},
+	}
+
+	ctx.Send(info)
 }

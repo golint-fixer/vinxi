@@ -25,6 +25,13 @@ func init() {
 	route("GET", "/", index.Get)
 	route("GET", "/catalog", index.Catalog)
 
+	// Manager admin level plugins routes
+	route("GET", "/manager", index.Manager)
+	route("GET", "/manager/plugins", plugins.List)
+	route("POST", "/manager/plugins", plugins.Create)
+	route("GET", "/manager/plugins/:plugin", plugins.Get)
+	route("DELETE", "/manager/plugins/:plugin", plugins.Delete)
+
 	// Global plugins routes
 	route("GET", "/plugins", plugins.List)
 	route("POST", "/plugins", plugins.Create)

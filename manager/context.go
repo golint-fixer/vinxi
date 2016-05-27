@@ -12,13 +12,14 @@ import (
 // Context is used to share request context entities
 // across controllers.
 type Context struct {
-	Manager  *Manager
-	Scope    *Scope
-	Instance *Instance
-	Request  *http.Request
-	Response http.ResponseWriter
-	Rule     rule.Rule
-	Plugin   plugin.Plugin
+	Manager      *Manager
+	Scope        *Scope
+	Instance     *Instance
+	AdminPlugins *plugin.Layer
+	Request      *http.Request
+	Response     http.ResponseWriter
+	Rule         rule.Rule
+	Plugin       plugin.Plugin
 }
 
 // ParseBody parses the body.

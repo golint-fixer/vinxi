@@ -38,7 +38,9 @@ type PluginsController struct{}
 
 func (PluginsController) List(ctx *Context) {
 	var layer *plugin.Layer
-	if ctx.Scope != nil {
+	if ctx.AdminPlugins != nil {
+		layer = ctx.AdminPlugins
+	} else if ctx.Scope != nil {
 		layer = ctx.Scope.Plugins
 	} else {
 		layer = ctx.Manager.Plugins

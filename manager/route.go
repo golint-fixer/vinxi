@@ -2,6 +2,7 @@ package manager
 
 import (
 	"net/http"
+	"regexp"
 )
 
 // RouteHandler represents HTTP router handler function
@@ -22,7 +23,16 @@ func (c *Route) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c.handle(ctx)
 }
 
+func (c *Route) isManagerPath(ctx *Context) bool {
+	matches, _ := regexp.MatchString("^/manager/", ctx.Request.URL.Path)
+	return matches
+}
+
 func (c *Route) handle(ctx *Context) {
+	if c.isManagerPath(ctx) {
+		ctx.AdminPlugins = ctx.Manager.AdminPlugins
+	}
+
 	instanceId := ctx.Request.URL.Query().Get(":instance")
 	if instanceId != "" {
 		ctx.Instance = ctx.Manager.GetInstance(instanceId)
@@ -47,7 +57,9 @@ func (c *Route) handle(ctx *Context) {
 
 	pluginId := ctx.Request.URL.Query().Get(":plugin")
 	if pluginId != "" {
-		if ctx.Scope != nil {
+		if ctx.AdminPlugins != nil {
+			ctx.Plugin = ctx.AdminPlugins.Get(pluginId)
+		} else if ctx.Scope != nil {
 			ctx.Plugin = ctx.Scope.Plugins.Get(pluginId)
 		} else {
 			ctx.Plugin = ctx.Manager.GetPlugin(pluginId)
