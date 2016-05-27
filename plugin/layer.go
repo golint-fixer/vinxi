@@ -75,7 +75,7 @@ func (l *Layer) Remove(id string) bool {
 
 // Run triggers the plugins layer call chain.
 // This function is designed to be executed by top-level middleware layers.
-func (l *Layer) Run(w http.ResponseWriter, r *http.Request, h http.Handler) {
+func (l *Layer) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Handler) {
 	next := h
 	l.rwm.RLock()
 	for _, plugin := range l.pool {

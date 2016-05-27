@@ -3,7 +3,7 @@ API commands can be run on any node, and vinxi will keep the configuration consi
 
 The RESTful Admin API server listens on port 8000 by default.
 
-RESTful Admin API is part of [manager]() package. Read more about the manager [here](#manager).
+RESTful Admin API is part of [manager](https://github.com/vinxi/vinxi/tree/master/manager) package. Read more about the manager [here](#manager).
 
 ### Content Types
 
@@ -15,6 +15,49 @@ The MIME content type used as HTTP `Content-Type` header must be:
 application/json
 ```
 
-### Security
+### Authentication
 
-RESTful API admin interface can be easily configured
+You can protect the admin HTTP API with a basic authentication mechanism.
+
+Admin HTTP API is not protected by default.
+
+#### HTTP basic authentication
+
+You can define multiple user/password credentials to authenticate users.
+
+### Endpoints
+
+#### Node information
+
+##### Endpoint
+
+| **GET**        |  /          |
+
+##### Response
+
+```
+HTTP 200 OK
+```
+
+```json
+{
+  "hostname": "tomas-laptop",
+  "version": "0.1.0",
+  "runtime": "go1.6",
+  "platform": "darwin",
+  "cpus": 8,
+  "gorutines": 13,
+  "links": {
+    "catalog": "/catalog",
+    "instances": "/instances",
+    "manager": "/manager",
+    "plugins": "/plugins",
+    "scopes": "/scopes"
+  }
+}
+```
+
+
+
+
+

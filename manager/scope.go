@@ -68,13 +68,13 @@ func (s *Scope) FlushPlugins() {
 
 // HandleHTTP is used to trigger the scope layer.
 // If all the rules passes, it will execute the scope specific registered plugins.
-func (s *Scope) HandleHTTP(h http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (s *Scope) HandleHTTP(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for !s.Rules.Match(r) {
 			// If no matches, just continue
 			h.ServeHTTP(w, r)
 			return
 		}
-		s.Plugins.Run(w, r, h)
-	}
+		s.Plugins.HandleHTTP(w, r, h)
+	})
 }

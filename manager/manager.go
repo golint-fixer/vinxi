@@ -38,14 +38,14 @@ type Manager struct {
 // and configure multiple vinxi proxy instance.
 func New() *Manager {
 	mw := layer.New()
-	aplugins := plugin.NewLayer()
+	pl := plugin.NewLayer()
 
-	// Define middleware priority
-	mw.UsePriority(aplugins, layer.TailPriority)
+	// Attach plugins layer in the manager middleware
+	mw.UsePriority(layer.RequestPhase, layer.Tail, pl)
 
 	return &Manager{
 		Layer:        mw,
-		AdminPlugins: aplugins,
+		AdminPlugins: pl,
 		Router:       httprouter.New(),
 		Plugins:      plugin.NewLayer(),
 	}
@@ -234,12 +234,12 @@ func (m *Manager) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Hand
 	// Build the scope handlers call chain
 	m.sm.RLock()
 	for _, scope := range m.scopes {
-		next = http.HandlerFunc(scope.HandleHTTP(next))
+		next = scope.HandleHTTP(next)
 	}
 	m.sm.RUnlock()
 
 	// Run global plugins, then global scopes
-	m.Plugins.Run(w, r, next)
+	m.Plugins.HandleHTTP(w, r, next)
 }
 
 // serveHTTP is used to handle HTTP traffic via admin API.

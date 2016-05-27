@@ -9,31 +9,38 @@ import (
 	"gopkg.in/vinxi/vinxi.v0/rule"
 )
 
+type info struct {
+	Hostname      string            `json:"hostname"`
+	Version       string            `json:"version"`
+	Runtime       string            `json:"runtime"`
+	Platform      string            `json:"platform"`
+	NumCPU        int               `json:"cpus"`
+	NumGoroutines int               `json:"gorutines"`
+	Links         map[string]string `json:"links"`
+}
+
 // IndexController represents the base routes HTTP controller.
 type IndexController struct{}
 
 func (IndexController) Get(ctx *Context) {
 	hostname, _ := os.Hostname()
-
-	info := struct {
-		Hostname string            `json:"hostname"`
-		Version  string            `json:"version"`
-		Platform string            `json:"platform"`
-		Links    map[string]string `json:"links"`
-	}{
-		Hostname: hostname,
-		Version:  vinxi.Version,
-		Platform: runtime.GOOS,
-		Links: map[string]string{
-			"catalog":   "/catalog",
-			"plugins":   "/plugins",
-			"scopes":    "/scopes",
-			"instances": "/instances",
-			"manager":   "/manager",
-		},
+	links := map[string]string{
+		"catalog":   "/catalog",
+		"plugins":   "/plugins",
+		"scopes":    "/scopes",
+		"instances": "/instances",
+		"manager":   "/manager",
 	}
 
-	ctx.Send(info)
+	ctx.Send(info{
+		Hostname:      hostname,
+		Version:       vinxi.Version,
+		Platform:      runtime.GOOS,
+		Runtime:       runtime.Version(),
+		NumCPU:        runtime.NumCPU(),
+		NumGoroutines: runtime.NumGoroutine(),
+		Links:         links,
+	})
 }
 
 func (IndexController) Catalog(ctx *Context) {
@@ -62,9 +69,7 @@ func (IndexController) Manager(ctx *Context) {
 	info := struct {
 		Links map[string]string `json:"links"`
 	}{
-		Links: map[string]string{
-			"plugins": "/manager/plugins",
-		},
+		Links: map[string]string{"plugins": "/manager/plugins"},
 	}
 
 	ctx.Send(info)

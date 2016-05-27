@@ -97,7 +97,7 @@ func (i *Instance) RemoveScope(name string) bool {
 func (i *Instance) HandleHTTP(w http.ResponseWriter, r *http.Request, next http.Handler) {
 	i.sm.RLock()
 	for _, scope := range i.scopes {
-		next = http.HandlerFunc(scope.HandleHTTP(next))
+		next = scope.HandleHTTP(next)
 	}
 	i.sm.RUnlock()
 
