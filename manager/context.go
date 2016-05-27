@@ -73,7 +73,7 @@ func (c *Context) SendNoContent() {
 	c.Response.WriteHeader(204)
 }
 
-// SendNoContent replies with 204 status code.
+// SendNotFound replies with 404 status code and custom message.
 func (c *Context) SendNotFound(message string) {
 	c.SendError(404, message)
 }

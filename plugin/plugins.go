@@ -1,8 +1,13 @@
 package plugin
 
 import (
+	"errors"
+
 	"gopkg.in/vinxi/vinxi.v0/config"
 )
+
+// ErrPluginNotFound is used when a plugin does not exists.
+var ErrPluginNotFound = errors.New("vinxi: plugin does not exists")
 
 // Plugins is used to store the available plugins globally.
 var Plugins = make(map[string]Info)
@@ -10,8 +15,8 @@ var Plugins = make(map[string]Info)
 // Factory represents the plugin factory function interface.
 type Factory func(config.Config) Handler
 
-// FactoryFunc represents the plugin factory configuration function interface.
-type FactoryFunc func(config.Config) (Plugin, error)
+// NewFunc represents the Plugin constructor factory function interface.
+type NewFunc func(config.Config) (Plugin, error)
 
 // Validator represents the plugin config field validator function interface.
 type Validator func(interface{}, config.Config) error
@@ -49,13 +54,13 @@ func Register(plugin Info) {
 // based on the given config options.
 func Init(name string, opts config.Config) (Plugin, error) {
 	if !Exists(name) {
-		panic("vinxi: plugin '" + name + "' does not exists.")
+		return nil, ErrPluginNotFound
 	}
 	return NewWithConfig(Plugins[name], opts)
 }
 
 // Get is used to find and retrieve a plugin.
-func Get(name string) FactoryFunc {
+func Get(name string) NewFunc {
 	plugin, ok := Plugins[name]
 	if ok {
 		return New(plugin)

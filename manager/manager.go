@@ -95,6 +95,13 @@ func (m *Manager) ServeDefault() (*http.Server, error) {
 	return m.ListenAndServe(ServerOptions{})
 }
 
+// UseScope registers one or multiple scopes at global manager level.
+func (m *Manager) UseScope(scopes ...*Scope) {
+	m.sm.Lock()
+	m.scopes = append(m.scopes, scopes...)
+	m.sm.Unlock()
+}
+
 // NewScope creates a new scope based on the given name
 // and optional description.
 func (m *Manager) NewScope(name, description string) *Scope {

@@ -58,7 +58,7 @@ func (PluginsController) Delete(ctx *Context) {
 	}
 }
 
-func (PluginsController) Create(ctx *Context) {
+func (p PluginsController) Create(ctx *Context) {
 	type data struct {
 		Name   string        `json:"name"`
 		Params config.Config `json:"config"`
@@ -87,6 +87,14 @@ func (PluginsController) Create(ctx *Context) {
 		return
 	}
 
-	ctx.Manager.UsePlugin(instance)
+	p.registerPlugin(ctx, instance)
 	ctx.Send(createPlugin(instance))
+}
+
+func (PluginsController) registerPlugin(ctx *Context, instance plugin.Plugin) {
+	if ctx.Scope != nil {
+		ctx.Scope.UsePlugin(instance)
+	} else {
+		ctx.Manager.UsePlugin(instance)
+	}
 }

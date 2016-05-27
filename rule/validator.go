@@ -1,4 +1,4 @@
-package plugin
+package rule
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"gopkg.in/vinxi/vinxi.v0/config"
 )
 
-// getField is used to find and retrieve the param Field configuration.
+// getField is used to retrieve the Field param specific configuration.
 func getField(name string, params Params) (Field, bool) {
 	for _, field := range params {
 		if field.Name == name {
@@ -16,7 +16,7 @@ func getField(name string, params Params) (Field, bool) {
 	return Field{}, false
 }
 
-// Validate is used to validates plugin params
+// Validate is used to validates the rule params
 // and report the proper param specific error.
 func Validate(params Params, opts config.Config) error {
 	// Set defaults params

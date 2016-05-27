@@ -10,6 +10,8 @@ var instances InstancesController
 // routes stores the registered routes.
 var routes = []*Route{}
 
+// route registers a new HTTP route based on the
+// given verb and path expression.
 func route(method, path string, fn RouteHandler) {
 	routes = append(routes, &Route{
 		Path:    path,
@@ -37,8 +39,8 @@ func init() {
 
 	// Scope-specific plugins routes
 	route("GET", "/scopes/:scope/plugins", plugins.List)
+	route("POST", "/scopes/:scope/plugins", plugins.Create)
 	route("GET", "/scopes/:scope/plugins/:plugin", plugins.Get)
-	route("POST", "/scopes/:scope/plugins/:plugin", plugins.Create)
 	route("DELETE", "/scopes/:scope/plugins/:plugin", plugins.Delete)
 
 	// Scope-specific rules routes
@@ -54,19 +56,19 @@ func init() {
 
 	// Instance-specific scopes
 	route("GET", "/instances/:instance/scopes", scopes.List)
+	route("POST", "/instances/:instance/scopes", scopes.Create)
 	route("GET", "/instances/:instance/scopes/:scope", scopes.Get)
-	route("POST", "/instances/:instance/scopes/:scope", scopes.Create)
 	route("DELETE", "/instances/:instance/scopes/:scope", scopes.Delete)
 
 	// Instance-specific, scope-specific plugins
 	route("GET", "/instances/:instance/scopes/:scope/plugins", plugins.List)
+	route("POST", "/instances/:instance/scopes/:scope/plugins", plugins.Create)
 	route("GET", "/instances/:instance/scopes/:scope/plugins/:plugin", plugins.Get)
-	route("POST", "/instances/:instance/scopes/:scope/plugins/:plugin", plugins.Create)
 	route("DELETE", "/instances/:instance/scopes/:scope/plugins/:plugin", plugins.Delete)
 
 	// Instance-specific, scope-specific rules
 	route("GET", "/instances/:instance/scopes/:scope/rules", rules.List)
+	route("POST", "/instances/:instance/scopes/:scope/rules", rules.Create)
 	route("GET", "/instances/:instance/scopes/:scope/rules/:rule", rules.Get)
-	route("POST", "/instances/:instance/scopes/:scope/rules/:rule", rules.Create)
 	route("DELETE", "/instances/:instance/scopes/:scope/rules/:rule", rules.Delete)
 }

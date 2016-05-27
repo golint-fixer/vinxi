@@ -3,9 +3,14 @@ package rule
 import (
 	"net/http"
 
-	"github.com/dchest/uniuri"
 	"gopkg.in/vinxi/vinxi.v0/config"
+	"gopkg.in/vinxi/vinxi.v0/utils"
 )
+
+// Matcher represents the matching function interface
+// used by rules to determine if a given traffic
+// should be filtered or not.
+type Matcher func(*http.Request) bool
 
 // Rule represents the required interface implemented
 // by HTTP traffic rules.
@@ -27,46 +32,62 @@ type Rule interface {
 	Match(*http.Request) bool
 }
 
-type matcher func(*http.Request) bool
-
+// rule implements the Rule interface.
 type rule struct {
 	id, name, description string
-	matcher               matcher
+	matcher               Matcher
 	config                config.Config
 }
 
+// ID is used to retrieve the rule unique identifier.
 func (r *rule) ID() string {
 	return r.id
 }
 
+// Name is used to retrieve the rule semantic identifier.
 func (r *rule) Name() string {
 	return r.name
 }
 
+// Description is used to retrieve the rule human friendly description.
 func (r *rule) Description() string {
 	return r.description
 }
 
+// Config is used to retrieve the rule configuration params.
 func (r *rule) Config() config.Config {
 	return r.config
 }
 
+// Match is executed by the scope layer when a new request is recieved by the proxy.
 func (r *rule) Match(req *http.Request) bool {
 	return r.matcher(req)
 }
 
 // New creates a new rule entity based on the given matcher function.
-func New(name, description string, matcher func(*http.Request) bool) Rule {
-	return NewWithConfig(name, description, make(map[string]interface{}), matcher)
+func New(info Info) func(config.Config) (Rule, error) {
+	return func(opts config.Config) (Rule, error) {
+		return NewWithConfig(info, opts)
+	}
 }
 
 // NewWithConfig creates a new rule entity based on the given config and matcher function.
-func NewWithConfig(name, description string, opts map[string]interface{}, matcher func(*http.Request) bool) Rule {
-	return &rule{
-		id:          uniuri.New(),
-		name:        name,
-		description: description,
-		matcher:     matcher,
-		config:      config.Config(opts),
+func NewWithConfig(info Info, opts config.Config) (Rule, error) {
+	if err := Validate(info.Params, opts); err != nil {
+		return nil, err
 	}
+
+	// Build the rule matcher function
+	matcher, err := info.Factory(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rule{
+		id:          utils.NewID(),
+		name:        info.Name,
+		description: info.Description,
+		config:      opts,
+		matcher:     matcher,
+	}, nil
 }

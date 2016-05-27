@@ -28,6 +28,7 @@ type Plugin interface {
 	HandleHTTP(http.Handler) http.Handler
 }
 
+// plugin implements the Plugin interface.
 type plugin struct {
 	id          string
 	name        string
@@ -39,7 +40,7 @@ type plugin struct {
 
 // New creates a new Plugin capable interface based on the
 // given HTTP handler logic encapsulated as plugin.
-func New(info Info) FactoryFunc {
+func New(info Info) NewFunc {
 	return func(opts config.Config) (Plugin, error) {
 		return NewWithConfig(info, opts)
 	}

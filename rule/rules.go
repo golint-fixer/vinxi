@@ -1,14 +1,22 @@
 package rule
 
 import (
+	"errors"
+
 	"gopkg.in/vinxi/vinxi.v0/config"
 )
+
+// ErrRuleNotFound is used when a rule does not exists.
+var ErrRuleNotFound = errors.New("vinxi: rule does not exists")
 
 // Rules is used to store the existent rules globally.
 var Rules = make(map[string]Info)
 
 // Factory represents the rule factory function interface.
-type Factory func(config.Config) Rule
+type Factory func(config.Config) (Matcher, error)
+
+// NewFunc represents the Rule constructor factory function interface.
+type NewFunc func(config.Config) (Rule, error)
 
 // Validator represents the rule config field validator function interface.
 type Validator func(interface{}, config.Config) error
@@ -44,15 +52,24 @@ func Register(rule Info) {
 
 // Init is used to initialize a new rule by name identifier
 // based on the given config options.
-func Init(name string, opts config.Config) Rule {
+func Init(name string, opts config.Config) (Rule, error) {
 	if !Exists(name) {
-		panic("vinxi: rule '" + name + "' does not exists.")
+		return nil, ErrRuleNotFound
 	}
-	return Rules[name].Factory(opts)
+	return NewWithConfig(Rules[name], opts)
 }
 
 // Get is used to find and retrieve a rule factory function.
-func Get(name string) Factory {
+func Get(name string) NewFunc {
+	rule, ok := Rules[name]
+	if ok {
+		return New(rule)
+	}
+	return nil
+}
+
+// GetFactory is used to find and retrieve a rule factory function.
+func GetFactory(name string) Factory {
 	rule, ok := Rules[name]
 	if ok {
 		return rule.Factory

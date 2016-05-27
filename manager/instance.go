@@ -32,6 +32,13 @@ func (i *Instance) Metadata() *vinxi.Metadata {
 	return i.instance.Metadata
 }
 
+// UseScope registers one or multiple scopes at instance level.
+func (i *Instance) UseScope(scopes ...*Scope) {
+	i.sm.Lock()
+	i.scopes = append(i.scopes, scopes...)
+	i.sm.Unlock()
+}
+
 // NewScope creates a new scope based on the given name
 // and optional description.
 func (i *Instance) NewScope(name, description string) *Scope {

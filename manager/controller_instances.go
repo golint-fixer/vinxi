@@ -2,24 +2,23 @@ package manager
 
 import (
 	"gopkg.in/vinxi/vinxi.v0"
-	"gopkg.in/vinxi/vinxi.v0/config"
 )
 
 // JSONInstance represents the Instance entity for JSON serialization.
 type JSONInstance struct {
-	ID          string          `json:"id"`
-	Name        string          `json:"name,omitempty"`
-	Description string          `json:"description,omitempty"`
-	Metadata    []config.Config `json:"metadata,omitempty"`
-	Scopes      []JSONScope     `json:"scopes"`
+	Info   *vinxi.Metadata `json:"info"`
+	Scopes []JSONScope     `json:"scopes"`
 }
 
-func createInstance(instance *Instance) *vinxi.Metadata {
-	return instance.Metadata()
+func createInstance(instance *Instance) JSONInstance {
+	return JSONInstance{
+		Info:   instance.Metadata(),
+		Scopes: createScopes(instance.Scopes()),
+	}
 }
 
-func createInstances(instances []*Instance) []*vinxi.Metadata {
-	list := []*vinxi.Metadata{}
+func createInstances(instances []*Instance) []JSONInstance {
+	list := []JSONInstance{}
 	for _, instance := range instances {
 		list = append(list, createInstance(instance))
 	}

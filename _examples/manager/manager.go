@@ -31,7 +31,12 @@ func main() {
 
 	// Instance level scope
 	scope := instance.NewScope("custom", "Custom scope")
-	scope.UseRule(rule.Init("path", config.Config{"path": "/image/(.*)"}))
+	r, err := rule.Init("path", config.Config{"path": "/image/(.*)"})
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+		return
+	}
+	scope.UseRule(r)
 
 	plu, err := plugin.Init("forward", config.Config{"url": "http://httpbin.org"})
 	if err != nil {
@@ -45,8 +50,12 @@ func main() {
 
 	// Register scopes
 	scope = mgr.NewScope("default", "Default scope")
-	scope.UseRule(rule.Init("path", config.Config{"path": "/vinxi/(.*)"}))
-	scope.UseRule(rule.Init("vhost", config.Config{"host": "localhost"}))
+
+	// Register scope-specific rules
+	r, _ = rule.Init("path", config.Config{"path": "/vinxi/(.*)"})
+	scope.UseRule(r)
+	r, _ = rule.Init("vhost", config.Config{"host": "localhost"})
+	scope.UseRule(r)
 
 	plu, err = plugin.Init("static", config.Config{"path": "/Users/h2non/Projects/vinxi"})
 	if err != nil {

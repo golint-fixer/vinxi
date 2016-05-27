@@ -42,14 +42,43 @@ func (RulesController) Get(ctx *Context) {
 	ctx.Send(createRule(ctx.Rule))
 }
 
-func (RulesController) Create(ctx *Context) {
-	ctx.Send(createRule(ctx.Rule))
-}
-
 func (RulesController) Delete(ctx *Context) {
 	if ctx.Scope.RemoveRule(ctx.Rule.ID()) {
 		ctx.SendNoContent()
 	} else {
 		ctx.SendError(500, "Cannot remove rule")
 	}
+}
+
+func (RulesController) Create(ctx *Context) {
+	type data struct {
+		Name   string        `json:"name"`
+		Params config.Config `json:"config"`
+	}
+
+	var input data
+	err := ctx.ParseBody(&input)
+	if err != nil {
+		return
+	}
+
+	if input.Name == "" {
+		ctx.SendError(400, "Missing required param: name")
+		return
+	}
+
+	factory := rule.Get(input.Name)
+	if factory == nil {
+		ctx.SendNotFound("Rule not found")
+		return
+	}
+
+	instance, err := factory(input.Params)
+	if err != nil {
+		ctx.SendError(400, "Cannot create rule: "+err.Error())
+		return
+	}
+
+	ctx.Scope.UseRule(instance)
+	ctx.Send(createRule(instance))
 }

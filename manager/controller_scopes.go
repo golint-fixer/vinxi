@@ -1,10 +1,5 @@
 package manager
 
-import (
-	"gopkg.in/vinxi/vinxi.v0/config"
-	"gopkg.in/vinxi/vinxi.v0/plugin"
-)
-
 // JSONScope represents the scope entity for JSON serialization.
 type JSONScope struct {
 	ID      string       `json:"id"`
@@ -57,33 +52,26 @@ func (ScopesController) Delete(ctx *Context) {
 
 func (ScopesController) Create(ctx *Context) {
 	type data struct {
-		Name   string        `json:"name"`
-		Params config.Config `json:"config"`
+		Name        string `json:"name"`
+		Description string `json:"description"`
 	}
 
-	var plu data
-	err := ctx.ParseBody(&plu)
+	var scope data
+	err := ctx.ParseBody(&scope)
 	if err != nil {
 		return
 	}
-
-	if plu.Name == "" {
+	if scope.Name == "" {
 		ctx.SendError(400, "Missing required param: name")
 		return
 	}
 
-	factory := plugin.Get(plu.Name)
-	if factory == nil {
-		ctx.SendNotFound("Plugin not found")
-		return
+	instance := NewScope(scope.Name, scope.Description)
+	if ctx.Instance != nil {
+		ctx.Instance.UseScope(instance)
+	} else {
+		ctx.Manager.UseScope(instance)
 	}
 
-	instance, err := factory(plu.Params)
-	if err != nil {
-		ctx.SendError(400, "Cannot create plugin: "+err.Error())
-		return
-	}
-
-	ctx.Manager.UsePlugin(instance)
-	ctx.Send(createPlugin(instance))
+	ctx.Send(createScope(instance))
 }

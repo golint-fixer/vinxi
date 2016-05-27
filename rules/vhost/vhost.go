@@ -28,27 +28,21 @@ var params = rule.Params{
 var Rule = rule.Info{
 	Name:        Name,
 	Description: Description,
-	Factory:     Factory,
+	Factory:     factory,
 	Params:      params,
 }
 
-// Factory represents the rule factory function
+// factory represents the rule factory function
 // designed to be called via rules constructor.
-func Factory(opts config.Config) rule.Rule {
-	return rule.NewWithConfig(
-		Name,
-		Description,
-		opts,
-		mux.MatchHost(opts.GetString("host")),
-	)
+func factory(opts config.Config) (rule.Matcher, error) {
+	return rule.Matcher(mux.MatchHost(opts.GetString("host"))), nil
 }
 
 // New creates a new rule who filters the traffic
 // if matches with the following path expression.
 // Regular expressions is supported.
-func New(host string) rule.Rule {
-	config := map[string]interface{}{"host": host}
-	return Factory(config)
+func New(host string) (rule.Rule, error) {
+	return rule.NewWithConfig(Rule, config.Config{"host": host})
 }
 
 func init() {
