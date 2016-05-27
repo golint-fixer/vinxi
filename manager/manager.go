@@ -37,11 +37,17 @@ type Manager struct {
 // New creates a new manager able to manage
 // and configure multiple vinxi proxy instance.
 func New() *Manager {
+	mw := layer.New()
+	aplugins := plugin.NewLayer()
+
+	// Define middleware priority
+	mw.UsePriority(aplugins, layer.TailPriority)
+
 	return &Manager{
-		Layer:        layer.New(),
+		Layer:        mw,
+		AdminPlugins: aplugins,
 		Router:       httprouter.New(),
 		Plugins:      plugin.NewLayer(),
-		AdminPlugins: plugin.NewLayer(),
 	}
 }
 
