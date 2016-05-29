@@ -1,56 +1,109 @@
 package manager
 
 import (
-	"bytes"
-	"encoding/json"
-	"io"
 	"net/http"
+	"sync"
 
-	"github.com/dchest/uniuri"
-	"github.com/julienschmidt/httprouter"
+	"github.com/h2non/httprouter"
 	"gopkg.in/vinxi/vinxi.v0"
 	"gopkg.in/vinxi/vinxi.v0/layer"
+	"gopkg.in/vinxi/vinxi.v0/plugin"
+	"gopkg.in/vinxi/vinxi.v0/rule"
+
+	// An empty import is required to load all the rules subpackages
+	_ "gopkg.in/vinxi/vinxi.v0/plugins"
+	_ "gopkg.in/vinxi/vinxi.v0/rules"
 )
 
-type VinxiInstance struct {
-	ID          string `json:"id"`
-	Name        string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	scopes      []*Scope
-	instance    *vinxi.Vinxi
-}
-
+// Manager represents the vinxi proxy admin manager.
 type Manager struct {
-	Server    *http.Server
-	plugins   *PluginLayer
+	sm        sync.RWMutex
 	scopes    []*Scope
-	instances []*VinxiInstance
+	im        sync.RWMutex
+	instances []*Instance
+
+	// AdminPlugins stores the HTTP admin server plugins.
+	AdminPlugins *plugin.Layer
+	// Plugins stores the global plugin layer.
+	Plugins *plugin.Layer
+	// Server stores the HTTP server used for the admin.
+	Server *http.Server
+	// Layer stores the manager internal middleware layer.
+	Layer *layer.Layer
+	// Router stores the manager HTTP router for the admin server.
+	Router *httprouter.Router
 }
 
+// New creates a new manager able to manage
+// and configure multiple vinxi proxy instance.
 func New() *Manager {
-	return &Manager{plugins: NewPluginLayer()}
+	mw := layer.New()
+	pl := plugin.NewLayer()
+
+	// Attach plugins layer in the manager middleware
+	mw.UsePriority(layer.RequestPhase, layer.Tail, pl)
+
+	return &Manager{
+		Layer:        mw,
+		AdminPlugins: pl,
+		Router:       httprouter.New(),
+		Plugins:      plugin.NewLayer(),
+	}
 }
 
+// Manage creates a new empty manage and
+// starts managing the given vinxi proxy instance.
 func Manage(name, description string, proxy *vinxi.Vinxi) *Manager {
 	m := New()
 	m.Manage(name, description, proxy)
 	return m
 }
 
-func (m *Manager) Manage(name, description string, proxy *vinxi.Vinxi) {
-	// Register manager middleware in the proxy
-	proxy.Layer.UsePriority("request", layer.Tail, m)
-
+// Manage adds a new vinxi proxy instance to be
+// managed by the current manager instance.
+func (m *Manager) Manage(name, description string, proxy *vinxi.Vinxi) *Instance {
 	// Register the managed Vinxi instance
-	instance := &VinxiInstance{ID: uniuri.New(), Name: name, Description: description, instance: proxy}
+	instance := NewInstance(name, description, proxy)
+
+	// Register manager middleware in the proxy
+	proxy.Layer.UsePriority(layer.RequestPhase, layer.Tail, m)
+
+	// Register the vinxi instance specific middleware layer
+	proxy.Layer.UsePriority(layer.RequestPhase, layer.Tail, instance)
+
+	// Register instance
+	m.im.Lock()
 	m.instances = append(m.instances, instance)
+	m.im.Unlock()
+
+	return instance
+}
+
+// Use attaches a new middleware handler for incoming HTTP traffic.
+func (m *Manager) Use(handler ...interface{}) {
+	m.Layer.Use(layer.RequestPhase, handler...)
+}
+
+// UsePhase attaches a new middleware handler to a specific phase.
+func (m *Manager) UsePhase(phase string, handler ...interface{}) {
+	m.Layer.Use(phase, handler...)
+}
+
+// UseFinalHandler uses a new middleware handler function as final handler.
+func (m *Manager) UseFinalHandler(fn http.Handler) {
+	m.Layer.UseFinalHandler(fn)
+}
+
+// UseAdminPlugin registers one or multiple plugins at manager admin level.
+func (m *Manager) UseAdminPlugin(plugins ...plugin.Plugin) {
+	m.AdminPlugins.Use(plugins...)
 }
 
 // ListenAndServe creates a new admin HTTP server and starts listening on
 // the network based on the given server options.
 func (m *Manager) ListenAndServe(opts ServerOptions) (*http.Server, error) {
 	m.Server = NewServer(opts)
-	m.Configure()
+	m.configure()
 	return m.Server, Listen(m.Server, opts)
 }
 
@@ -60,241 +113,149 @@ func (m *Manager) ServeDefault() (*http.Server, error) {
 	return m.ListenAndServe(ServerOptions{})
 }
 
+// UseScope registers one or multiple scopes at global manager level.
+func (m *Manager) UseScope(scopes ...*Scope) {
+	m.sm.Lock()
+	m.scopes = append(m.scopes, scopes...)
+	m.sm.Unlock()
+}
+
 // NewScope creates a new scope based on the given name
 // and optional description.
 func (m *Manager) NewScope(name, description string) *Scope {
 	scope := NewScope(name, description)
+	m.sm.Lock()
 	m.scopes = append(m.scopes, scope)
+	m.sm.Unlock()
 	return scope
 }
 
 // NewScope creates a new default scope.
-func (m *Manager) NewDefaultScope(rules ...Rule) *Scope {
-	scope := m.NewScope("default", "Default generic scope")
+func (m *Manager) NewDefaultScope(rules ...rule.Rule) *Scope {
+	scope := m.NewScope("default", "Default scope")
 	scope.UseRule(rules...)
 	return scope
 }
 
-// HandleHTTP is triggered by the vinxi middleware layer on incoming HTTP request.
-func (m *Manager) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Handler) {
-	next := h
-
-	for _, scope := range m.scopes {
-		next = http.HandlerFunc(scope.HandleHTTP(next))
-	}
-
-	next.ServeHTTP(w, r)
+// UsePlugin registers one or multiple plugins at global manager level.
+func (m *Manager) UsePlugin(plugins ...plugin.Plugin) {
+	m.Plugins.Use(plugins...)
 }
 
-func (m *Manager) Configure() error {
-	router := httprouter.New()
-	m.Server.Handler = router
+// GetPlugin finds and returns a plugin by its ID or name.
+func (m *Manager) GetPlugin(name string) plugin.Plugin {
+	return m.Plugins.Get(name)
+}
 
-	// Define route handlers
-	for _, r := range routes {
-		r.Manager = m // Expose manager instance in routes
-		router.Handler(r.Method, r.Path, r)
+// RemovePlugin removes a plugin by its ID.
+func (m *Manager) RemovePlugin(id string) bool {
+	return m.Plugins.Remove(id)
+}
+
+// GetScope finds and returns a vinxi managed instance.
+func (m *Manager) GetScope(name string) *Scope {
+	m.sm.Lock()
+	defer m.sm.Unlock()
+
+	for _, scope := range m.scopes {
+		if scope.ID == name || scope.Name == name {
+			return scope
+		}
 	}
 
 	return nil
 }
 
-type JSONRule struct {
-	ID          string `json:"id"`
-	Name        string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	Config      Config `json:"config,omitempty"`
+// Scopes returns the registered scopes at global level.
+func (m *Manager) Scopes() []*Scope {
+	m.sm.Lock()
+	defer m.sm.Unlock()
+	return m.scopes
 }
 
-type JSONPlugin struct {
-	ID          string `json:"id"`
-	Name        string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-	Enabled     bool   `json:"enabled,omitempty"`
-}
+// RemoveScope removes a registered scope.
+// Returns false if the scope cannot be found.
+func (m *Manager) RemoveScope(name string) bool {
+	m.sm.Lock()
+	defer m.sm.Unlock()
 
-type JSONScope struct {
-	ID      string       `json:"id"`
-	Name    string       `json:"name,omitempty"`
-	Rules   []JSONRule   `json:"rules,omitempty"`
-	Plugins []JSONPlugin `json:"plugins,omitempty"`
-}
-
-type ControllerHandler func(http.ResponseWriter, *http.Request, *Controller)
-
-type Controller struct {
-	Path    string
-	Method  string
-	Manager *Manager
-	Handler ControllerHandler
-}
-
-func (c *Controller) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c.Handler(w, r, c)
-}
-
-var routes = []*Controller{}
-
-func AddRoute(method, path string, fn ControllerHandler) {
-	route := &Controller{
-		Path:    path,
-		Method:  method,
-		Handler: fn,
-	}
-	routes = append(routes, route)
-}
-
-func init() {
-	AddRoute("GET", "/", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		io.WriteString(w, "vinxi HTTP API manager "+vinxi.Version)
-	})
-
-	AddRoute("GET", "/version", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"vinxi": "`+vinxi.Version+`"}`)
-	})
-
-	AddRoute("GET", "/health", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, "{}")
-	})
-
-	AddRoute("GET", "/catalog", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		io.WriteString(w, "Catalog here...")
-	})
-
-	AddRoute("GET", "/catalog/plugins", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		io.WriteString(w, "Plugin catalog here...")
-	})
-
-	AddRoute("GET", "/catalog/scopes", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		io.WriteString(w, "Scopes catalog here...")
-	})
-
-	AddRoute("GET", "/instances", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		buf := &bytes.Buffer{}
-
-		err := json.NewEncoder(buf).Encode(c.Manager.instances)
-		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
-			return
+	for i, scope := range m.scopes {
+		if scope.ID == name || scope.Name == name {
+			m.scopes = append(m.scopes[:i], m.scopes[i+1:]...)
+			return true
 		}
-
-		w.Write(buf.Bytes())
-	})
-
-	AddRoute("GET", "/instances/:instance", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		buf := &bytes.Buffer{}
-		id := req.URL.Query().Get(":instance")
-
-		mgr := c.Manager
-		for _, instance := range mgr.instances {
-			if instance.ID == id || instance.Name == id {
-				scopes := createScopes(instance.scopes)
-
-				err := json.NewEncoder(buf).Encode(scopes)
-				if err != nil {
-					w.WriteHeader(500)
-					w.Write([]byte(err.Error()))
-					return
-				}
-
-				w.Write(buf.Bytes())
-				return
-			}
-		}
-
-		w.WriteHeader(404)
-		w.Write([]byte("Not found"))
-		return
-	})
-
-	AddRoute("GET", "/plugins", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		buf := &bytes.Buffer{}
-		scopes := createScopes(c.Manager.scopes)
-
-		err := json.NewEncoder(buf).Encode(scopes)
-		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
-			return
-		}
-
-		w.Write(buf.Bytes())
-	})
-
-	AddRoute("GET", "/scopes", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		buf := &bytes.Buffer{}
-		scopes := createScopes(c.Manager.scopes)
-
-		err := json.NewEncoder(buf).Encode(scopes)
-		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
-			return
-		}
-
-		w.Write(buf.Bytes())
-	})
-
-	AddRoute("GET", "/scopes/:scope", func(w http.ResponseWriter, req *http.Request, c *Controller) {
-		id := req.URL.Query().Get(":scope")
-
-		// Find scope by ID
-		for _, scope := range c.Manager.scopes {
-			if scope.ID == id {
-				data, err := encodeJSON(createScope(scope))
-				if err != nil {
-					w.WriteHeader(500)
-					w.Write([]byte(err.Error()))
-					return
-				}
-				w.Write(data)
-				return
-			}
-		}
-
-		w.WriteHeader(404)
-		w.Write([]byte("not found"))
-	})
-}
-
-func encodeJSON(data interface{}) ([]byte, error) {
-	buf := &bytes.Buffer{}
-	err := json.NewEncoder(buf).Encode(data)
-	return buf.Bytes(), err
-}
-
-func createScope(scope *Scope) JSONScope {
-	return JSONScope{
-		ID:      scope.ID,
-		Name:    scope.Name,
-		Rules:   createRules(scope),
-		Plugins: createPlugins(scope),
 	}
+
+	return false
 }
 
-func createScopes(scopes []*Scope) []JSONScope {
-	buf := make([]JSONScope, len(scopes))
-	for i, scope := range scopes {
-		buf[i] = createScope(scope)
-	}
-	return buf
+// Instances returns the registered vinxi instances in the manager.
+func (m *Manager) Instances() []*Instance {
+	m.im.Lock()
+	defer m.im.Unlock()
+	return m.instances
 }
 
-func createRules(scope *Scope) []JSONRule {
-	rules := make([]JSONRule, scope.rules.Len())
-	for i, rule := range scope.rules.pool {
-		rules[i] = JSONRule{ID: rule.ID(), Name: rule.Name(), Description: rule.Description(), Config: rule.Config()}
+// GetInstance finds and returns a vinxi managed instance.
+func (m *Manager) GetInstance(name string) *Instance {
+	m.im.Lock()
+	defer m.im.Unlock()
+
+	for _, instance := range m.instances {
+		if instance.ID() == name || instance.Metadata().Name == name {
+			return instance
+		}
 	}
-	return rules
+
+	return nil
 }
 
-func createPlugins(scope *Scope) []JSONPlugin {
-	plugins := make([]JSONPlugin, scope.plugins.Len())
-	for i, plugin := range scope.plugins.pool {
-		plugins[i] = JSONPlugin{ID: plugin.ID(), Name: plugin.Name(), Description: plugin.Description()}
+// RemoveInstance removes a registered vinxi instance.
+// Returns false if the instance cannot be found.
+func (m *Manager) RemoveInstance(name string) bool {
+	m.im.Lock()
+	defer m.im.Unlock()
+
+	for i, instance := range m.instances {
+		if instance.ID() == name || instance.Metadata().Name == name {
+			m.instances = append(m.instances[:i], m.instances[i+1:]...)
+			return true
+		}
 	}
-	return plugins
+
+	return false
+}
+
+// HandleHTTP is triggered by the vinxi middleware layer on incoming HTTP request.
+func (m *Manager) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Handler) {
+	// Declare the final handler in the call chain
+	next := h
+
+	// Build the scope handlers call chain
+	m.sm.RLock()
+	for _, scope := range m.scopes {
+		next = scope.HandleHTTP(next)
+	}
+	m.sm.RUnlock()
+
+	// Run global plugins, then global scopes
+	m.Plugins.HandleHTTP(w, r, next)
+}
+
+// serveHTTP is used to handle HTTP traffic via admin API.
+func (m *Manager) serveHTTP(w http.ResponseWriter, r *http.Request) {
+	// trigger middleware layer first, then the router
+	m.Layer.Run(layer.RequestPhase, w, r, m.Router)
+}
+
+// configure is used to configure the HTTP API.
+func (m *Manager) configure() {
+	// bind the admin http.Handler
+	m.Server.Handler = http.HandlerFunc(m.serveHTTP)
+
+	// Define route handlers
+	for _, r := range routes {
+		r.Manager = m // Expose manager instance in routes
+		m.Router.Handler(r.Method, r.Path, r)
+	}
 }

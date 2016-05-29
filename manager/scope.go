@@ -4,15 +4,17 @@ import (
 	"net/http"
 
 	"github.com/dchest/uniuri"
+	"gopkg.in/vinxi/vinxi.v0/plugin"
+	"gopkg.in/vinxi/vinxi.v0/rule"
 )
 
 // Scope represents the HTTP configuration scope who can
 // store rules and plugins.
 type Scope struct {
-	// rules stores the scope registered rules.
-	rules *RuleLayer
-	// plugins provides the plugin register layer.
-	plugins *PluginLayer
+	// Rules stores the scope registered rules.
+	Rules *rule.Layer
+	// Plugins provides the plugin register layer.
+	Plugins *plugin.Layer
 	// ID is used to store the plugin unique identifier.
 	ID string
 	// Name is used to store the scope semantic alias.
@@ -29,50 +31,50 @@ func NewScope(name, description string) *Scope {
 		ID:          uniuri.New(),
 		Name:        name,
 		Description: description,
-		rules:       NewRuleLayer(),
-		plugins:     NewPluginLayer(),
+		Rules:       rule.NewLayer(),
+		Plugins:     plugin.NewLayer(),
 	}
 }
 
 // UseRule registers one or multiple rules in the current scope.
-func (s *Scope) UseRule(rules ...Rule) {
-	s.rules.Use(rules...)
+func (s *Scope) UseRule(rules ...rule.Rule) {
+	s.Rules.Use(rules...)
 }
 
-// UseRule registers one or multiple plugins in the current scope.
-func (s *Scope) UsePlugin(plugins ...Plugin) {
-	s.plugins.Use(plugins...)
-}
-
-// Rules returns the rules register layer of the current scope.
-func (s *Scope) Rules() *RuleLayer {
-	return s.rules
-}
-
-// Plugins returns the plugins register layer of the current scope.
-func (s *Scope) Plugins() *PluginLayer {
-	return s.plugins
+// UsePlugin registers one or multiple plugins in the current scope.
+func (s *Scope) UsePlugin(plugins ...plugin.Plugin) {
+	s.Plugins.Use(plugins...)
 }
 
 // RemoveRule removes a rule by its ID.
 func (s *Scope) RemoveRule(id string) bool {
-	return s.plugins.Remove(id)
+	return s.Rules.Remove(id)
+}
+
+// FlushRules removes all the registered rules.
+func (s *Scope) FlushRules() {
+	s.Rules.Flush()
 }
 
 // RemovePlugin removes a plugin by its ID.
 func (s *Scope) RemovePlugin(id string) bool {
-	return s.plugins.Remove(id)
+	return s.Plugins.Remove(id)
+}
+
+// FlushPlugins removes all the registered plugins.
+func (s *Scope) FlushPlugins() {
+	s.Plugins.Flush()
 }
 
 // HandleHTTP is used to trigger the scope layer.
 // If all the rules passes, it will execute the scope specific registered plugins.
-func (s *Scope) HandleHTTP(h http.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		for !s.rules.Match(r) {
+func (s *Scope) HandleHTTP(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		for !s.Rules.Match(r) {
 			// If no matches, just continue
 			h.ServeHTTP(w, r)
 			return
 		}
-		s.plugins.Run(w, r, h)
-	}
+		s.Plugins.HandleHTTP(w, r, h)
+	})
 }

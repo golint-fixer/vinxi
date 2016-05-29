@@ -1,3 +1,0 @@
-package manager
-
-// Nothing for now...

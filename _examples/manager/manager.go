@@ -5,28 +5,64 @@ import (
 	"net/http"
 
 	"gopkg.in/vinxi/vinxi.v0"
+	"gopkg.in/vinxi/vinxi.v0/config"
 	"gopkg.in/vinxi/vinxi.v0/manager"
-	"gopkg.in/vinxi/vinxi.v0/plugins/static"
-	"gopkg.in/vinxi/vinxi.v0/rules"
+	"gopkg.in/vinxi/vinxi.v0/plugin"
+	"gopkg.in/vinxi/vinxi.v0/rule"
 )
 
 const port = 3100
 
 func main() {
-	// Creates a new vinxi proxy
-	v := vinxi.New()
-
 	// Creates a new manager for the vinxi proxy
 	mgr := manager.New()
-	mgr.Manage("default", "This a default server instance", v)
+
+	// Attach global plugin
+	// plu, err := plugin.Init("auth", config.Config{"token": "foo"})
+	// if err != nil {
+	// fmt.Printf("Error: %s\n", err)
+	// return
+	// }
+	// mgr.UsePlugin(plu)
+
+	// Creates a new vinxi proxy and manage it
+	v := vinxi.New()
+	instance := mgr.Manage("default", "This a default proxy", v)
+
+	// Instance level scope
+	scope := instance.NewScope("custom", "Custom scope")
+	r, err := rule.Init("path", config.Config{"path": "/image/(.*)"})
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+		return
+	}
+	scope.UseRule(r)
+
+	plu, err := plugin.Init("forward", config.Config{"url": "http://httpbin.org"})
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+		return
+	}
+	scope.UsePlugin(plu)
 
 	// Starts default admin HTTP server
 	go mgr.ServeDefault()
 
 	// Register scopes
-	scope := mgr.NewScope("default", "Default scope")
-	scope.UseRule(rules.Path("/(.*)"))
-	scope.UsePlugin(static.New("/Users/h2non/Projects/vinxi"))
+	scope = mgr.NewScope("default", "Default scope")
+
+	// Register scope-specific rules
+	r, _ = rule.Init("path", config.Config{"path": "/vinxi/(.*)"})
+	scope.UseRule(r)
+	r, _ = rule.Init("vhost", config.Config{"host": "localhost"})
+	scope.UseRule(r)
+
+	plu, err = plugin.Init("static", config.Config{"path": "/Users/h2non/Projects/vinxi"})
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+		return
+	}
+	scope.UsePlugin(plu)
 
 	// Registers a simple middleware handler
 	v.Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
@@ -35,10 +71,10 @@ func main() {
 	})
 
 	// Forward traffic to httpbin.org by default
-	v.Forward("http://httpbin.org")
+	v.Forward("http://www.apache.org")
 
 	fmt.Printf("Server listening on port: %d\n", port)
-	_, err := v.ListenAndServe(vinxi.ServerOptions{Port: port})
+	_, err = v.ListenAndServe(vinxi.ServerOptions{Port: port})
 	if err != nil {
 		fmt.Errorf("Error: %s\n", err)
 	}

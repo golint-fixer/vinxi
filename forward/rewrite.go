@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"gopkg.in/vinxi/utils.v0"
+	"gopkg.in/vinxi/vinxi.v0/utils"
 )
 
 // HeaderRewriter is responsible for removing hop-by-hop headers and setting forwarding headers.

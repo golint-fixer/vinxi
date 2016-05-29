@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/nbio/st"
-	"gopkg.in/vinxi/utils.v0"
+	"gopkg.in/vinxi/vinxi.v0/utils"
 )
 
 type plugin struct {
@@ -192,7 +192,7 @@ func TestConcurrentRegistration(t *testing.T) {
 	max := 10
 	wg.Add(max)
 
-	for i := 0; i < max; i += 1 {
+	for i := 0; i < max; i++ {
 		go (func() {
 			mw.Use(RequestPhase, fn)
 			wg.Done()

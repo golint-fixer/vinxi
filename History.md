@@ -1,3 +1,3 @@
-## 0.1.0 - 21-03-2016
+## 0.1.0 - 17-04-2016
 
-- First release (beta).
+- First release.

@@ -12,7 +12,7 @@ import (
 
 	"github.com/nbio/st"
 	"github.com/vulcand/oxy/testutils"
-	"gopkg.in/vinxi/utils.v0"
+	"gopkg.in/vinxi/vinxi.v0/utils"
 
 	"golang.org/x/net/websocket"
 	. "gopkg.in/check.v1"

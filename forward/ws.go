@@ -2,7 +2,7 @@ package forward
 
 import (
 	"crypto/tls"
-	"gopkg.in/vinxi/utils.v0"
+	"gopkg.in/vinxi/vinxi.v0/utils"
 	"io"
 	"net"
 	"net/http"

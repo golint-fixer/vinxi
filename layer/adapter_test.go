@@ -2,7 +2,7 @@ package layer
 
 import (
 	"github.com/nbio/st"
-	"gopkg.in/vinxi/utils.v0"
+	"gopkg.in/vinxi/vinxi.v0/utils"
 	"net/http"
 	"testing"
 )

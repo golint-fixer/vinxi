@@ -19,13 +19,13 @@ var (
 
 // ServerOptions represents the supported server options.
 type ServerOptions struct {
-	Port         int
-	ReadTimeout  int
-	WriteTimeout int
-	Addr         string
-	Forward      string
-	CertFile     string
-	KeyFile      string
+	Port         int    `json:"port,omitempty"`
+	ReadTimeout  int    `json:"readTimeout"`
+	WriteTimeout int    `json:"writeTimeout"`
+	Addr         string `json:"address"`
+	Forward      string `json:"forward,omitempty"`
+	CertFile     string `json:"certificate,omitempty"`
+	KeyFile      string `json:"-"`
 }
 
 // Server represents a simple wrapper around http.Server for better convenience
@@ -74,12 +74,6 @@ func NewServer(o ServerOptions) *Server {
 		Server:  svr,
 		Vinxi:   vinxi,
 	}
-}
-
-// Forward defines the default URL to forward incoming traffic.
-func (s *Server) Forward(uri string) *Server {
-	s.Vinxi.Forward(uri)
-	return s
 }
 
 // Listen starts listening on network.

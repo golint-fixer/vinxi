@@ -26,8 +26,14 @@ var FinalHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request)
 // FinalErrorHandler stores the default http.Handler used as final middleware chain.
 // You can customize this handler in order to reply with a default error response.
 var FinalErrorHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	msg := "unknown panic"
+	err := context.GetError(r, "vinxi.error")
+	if err != nil {
+		msg = err.Error()
+	}
+
 	w.WriteHeader(500)
-	w.Write([]byte("Proxy Error"))
+	w.Write([]byte("Proxy error: " + msg))
 })
 
 // Runnable represents the required interface for a runnable

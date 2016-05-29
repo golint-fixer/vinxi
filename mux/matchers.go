@@ -6,7 +6,7 @@ import (
 )
 
 // Matcher represents the function interface implemented by matchers
-type Matcher func(req *http.Request) bool
+type Matcher func(*http.Request) bool
 
 // MatchMethod matches the HTTP method name againts the request.
 func MatchMethod(methods ...string) Matcher {
