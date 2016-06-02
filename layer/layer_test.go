@@ -69,7 +69,7 @@ func TestFinalErrorHandling(t *testing.T) {
 	mw.Run("request", w, req, nil)
 
 	st.Expect(t, w.Code, 500)
-	st.Expect(t, string(w.Body), "Proxy Error")
+	st.Expect(t, string(w.Body), "Proxy error: unknown panic")
 }
 
 func TestUseFinalHandler(t *testing.T) {
@@ -356,7 +356,7 @@ func TestParentLayerPanicFinalHandler(t *testing.T) {
 	st.Expect(t, w.Code, 500)
 	st.Expect(t, w.Header().Get("foo"), "foo")
 	st.Expect(t, w.Header().Get("error"), "foo")
-	st.Expect(t, string(w.Body), "Proxy Error")
+	st.Expect(t, string(w.Body), "Proxy error: unknown panic")
 }
 
 func TestParentLayerChildPanicHandler(t *testing.T) {
@@ -400,7 +400,7 @@ func TestParentLayerChildPanicHandler(t *testing.T) {
 	st.Expect(t, w.Code, 500)
 	st.Expect(t, w.Header().Get("foo"), "foo")
 	st.Expect(t, w.Header().Get("error"), "parent")
-	st.Expect(t, string(w.Body), "Proxy Error")
+	st.Expect(t, string(w.Body), "Proxy error: unknown panic")
 }
 
 func BenchmarkLayerRun(b *testing.B) {
