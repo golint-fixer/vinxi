@@ -160,9 +160,11 @@ func (s *FwdSuite) TestCustomRewriter(c *C) {
 }
 
 func (s *FwdSuite) TestCustomTransportTimeout(c *C) {
+	done := make(chan bool)
 	srv := testutils.NewHandler(func(w http.ResponseWriter, req *http.Request) {
 		time.Sleep(20 * time.Millisecond)
 		w.Write([]byte("hello"))
+		done <- true
 	})
 	defer srv.Close()
 
@@ -179,6 +181,7 @@ func (s *FwdSuite) TestCustomTransportTimeout(c *C) {
 	defer proxy.Close()
 
 	re, _, err := testutils.Get(proxy.URL)
+	<-done
 	c.Assert(err, IsNil)
 	c.Assert(re.StatusCode, Equals, http.StatusGatewayTimeout)
 }
