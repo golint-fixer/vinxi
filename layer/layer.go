@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"sync"
 
-	"gopkg.in/vinxi/context.v0"
+	"gopkg.in/vinxi/vinxi.v0/context"
 )
 
 const (
