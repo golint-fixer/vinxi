@@ -50,7 +50,7 @@ func (c *Context) SendStatus(status int, data interface{}) {
 	c.Response.Write(buf)
 }
 
-// Error replies with an custom error message and 500 as status code.
+// SendError replies with an custom error message and 500 as status code.
 func (c *Context) SendError(status int, message string) {
 	c.Response.Header().Set("Content-Type", "application/json")
 

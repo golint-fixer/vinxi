@@ -33,21 +33,21 @@ func (c *Route) handle(ctx *Context) {
 		ctx.AdminPlugins = ctx.Manager.AdminPlugins
 	}
 
-	instanceId := ctx.Request.URL.Query().Get(":instance")
-	if instanceId != "" {
-		ctx.Instance = ctx.Manager.GetInstance(instanceId)
+	instanceID := ctx.Request.URL.Query().Get(":instance")
+	if instanceID != "" {
+		ctx.Instance = ctx.Manager.GetInstance(instanceID)
 		if ctx.Instance == nil {
 			ctx.SendNotFound("Instance not found")
 			return
 		}
 	}
 
-	scopeId := ctx.Request.URL.Query().Get(":scope")
-	if scopeId != "" {
+	scopeID := ctx.Request.URL.Query().Get(":scope")
+	if scopeID != "" {
 		if ctx.Instance != nil {
-			ctx.Scope = ctx.Instance.GetScope(scopeId)
+			ctx.Scope = ctx.Instance.GetScope(scopeID)
 		} else {
-			ctx.Scope = ctx.Manager.GetScope(scopeId)
+			ctx.Scope = ctx.Manager.GetScope(scopeID)
 		}
 		if ctx.Scope == nil {
 			ctx.SendNotFound("Scope not found")
@@ -55,14 +55,14 @@ func (c *Route) handle(ctx *Context) {
 		}
 	}
 
-	pluginId := ctx.Request.URL.Query().Get(":plugin")
-	if pluginId != "" {
+	pluginID := ctx.Request.URL.Query().Get(":plugin")
+	if pluginID != "" {
 		if ctx.AdminPlugins != nil {
-			ctx.Plugin = ctx.AdminPlugins.Get(pluginId)
+			ctx.Plugin = ctx.AdminPlugins.Get(pluginID)
 		} else if ctx.Scope != nil {
-			ctx.Plugin = ctx.Scope.Plugins.Get(pluginId)
+			ctx.Plugin = ctx.Scope.Plugins.Get(pluginID)
 		} else {
-			ctx.Plugin = ctx.Manager.GetPlugin(pluginId)
+			ctx.Plugin = ctx.Manager.GetPlugin(pluginID)
 		}
 		if ctx.Plugin == nil {
 			ctx.SendNotFound("Plugin not found")
@@ -70,9 +70,9 @@ func (c *Route) handle(ctx *Context) {
 		}
 	}
 
-	ruleId := ctx.Request.URL.Query().Get(":rule")
-	if ruleId != "" && ctx.Scope != nil {
-		ctx.Rule = ctx.Scope.Rules.Get(ruleId)
+	ruleID := ctx.Request.URL.Query().Get(":rule")
+	if ruleID != "" && ctx.Scope != nil {
+		ctx.Rule = ctx.Scope.Rules.Get(ruleID)
 		if ctx.Rule == nil {
 			ctx.SendNotFound("Rule not found")
 			return

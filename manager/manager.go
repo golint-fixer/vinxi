@@ -130,7 +130,7 @@ func (m *Manager) NewScope(name, description string) *Scope {
 	return scope
 }
 
-// NewScope creates a new default scope.
+// NewDefaultScope creates a new default scope.
 func (m *Manager) NewDefaultScope(rules ...rule.Rule) *Scope {
 	scope := m.NewScope("default", "Default scope")
 	scope.UseRule(rules...)
