@@ -83,7 +83,7 @@ func main() {
 
 	// Start HTTP server
 	fmt.Printf("Server listening on port %d\n", port)
-	v.ServeAndListen(opts)
+	v.ListenAndServe(opts)
 }
 
 func getPort(port int) int {
