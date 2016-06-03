@@ -1,25 +1,27 @@
 package vinxi
 
 import (
-	"bytes"
 	"fmt"
-	"github.com/nbio/st"
+	"gopkg.in/h2non/baloo.v0"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
 func TestVinxi(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	v := New().Use(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Hello world")
 	}))
-	defer ts.Close()
+	ts := httptest.NewServer(v)
+	baloo.New(ts.URL).Get("/").Expect(t).StatusOk().BodyEquals("Hello world").Done()
+}
 
+func TestRouteGET(t *testing.T) {
 	v := New()
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", ts.URL, bytes.NewBufferString("foo"))
-
-	v.ServeHTTP(w, req)
-	st.Expect(t, w.Code, 200)
-	st.Expect(t, w.Body.String(), "Hello world\n")
+	v.Get("/hello").Handle(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Hello world")
+	}))
+	ts := httptest.NewServer(v)
+	baloo.New(ts.URL).Get("/hello").Expect(t).StatusOk().BodyEquals("Hello world").Done()
+	baloo.New(ts.URL).Get("/").Expect(t).Status(502).BodyEquals("Bad Gateway").Done()
 }
