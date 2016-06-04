@@ -15,7 +15,7 @@ type info struct {
 	Runtime       string            `json:"runtime"`
 	Platform      string            `json:"platform"`
 	NumCPU        int               `json:"cpus"`
-	NumGoroutines int               `json:"gorutines"`
+	NumGoroutines int               `json:"goroutines"`
 	Links         map[string]string `json:"links"`
 }
 
