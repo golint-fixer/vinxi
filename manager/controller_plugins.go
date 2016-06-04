@@ -33,10 +33,10 @@ func createPlugin(p plugin.Plugin) JSONPlugin {
 	}
 }
 
-// PluginsController represents the plugins entity HTTP controller.
-type PluginsController struct{}
+// pluginsController represents the plugins entity HTTP controller.
+type pluginsController struct{}
 
-func (PluginsController) List(ctx *Context) {
+func (pluginsController) List(ctx *Context) {
 	var layer *plugin.Layer
 	if ctx.AdminPlugins != nil {
 		layer = ctx.AdminPlugins
@@ -48,11 +48,11 @@ func (PluginsController) List(ctx *Context) {
 	ctx.Send(createPlugins(layer.All()))
 }
 
-func (PluginsController) Get(ctx *Context) {
+func (pluginsController) Get(ctx *Context) {
 	ctx.Send(createPlugin(ctx.Plugin))
 }
 
-func (PluginsController) Delete(ctx *Context) {
+func (pluginsController) Delete(ctx *Context) {
 	if ctx.Manager.RemovePlugin(ctx.Plugin.ID()) {
 		ctx.SendNoContent()
 	} else {
@@ -60,7 +60,7 @@ func (PluginsController) Delete(ctx *Context) {
 	}
 }
 
-func (p PluginsController) Create(ctx *Context) {
+func (p pluginsController) Create(ctx *Context) {
 	type data struct {
 		Name   string        `json:"name"`
 		Params config.Config `json:"config"`
@@ -93,7 +93,7 @@ func (p PluginsController) Create(ctx *Context) {
 	ctx.Send(createPlugin(instance))
 }
 
-func (PluginsController) registerPlugin(ctx *Context, instance plugin.Plugin) {
+func (pluginsController) registerPlugin(ctx *Context, instance plugin.Plugin) {
 	if ctx.Scope != nil {
 		ctx.Scope.UsePlugin(instance)
 	} else {

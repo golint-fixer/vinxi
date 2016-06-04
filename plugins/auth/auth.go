@@ -57,7 +57,7 @@ func factory(opts config.Config) plugin.Handler {
 	return handler(opts)
 }
 
-// New creates a new auth plugin.
+// NewToken creates a new auth plugin.
 func NewToken(token string) (plugin.Plugin, error) {
 	return plugin.NewWithConfig(Plugin, config.Config{"token": token})
 }

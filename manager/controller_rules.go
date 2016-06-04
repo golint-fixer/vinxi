@@ -31,18 +31,18 @@ func createRule(rule rule.Rule) JSONRule {
 	}
 }
 
-// RulesController represents the rules entity HTTP controller.
-type RulesController struct{}
+// rulesController represents the rules entity HTTP controller.
+type rulesController struct{}
 
-func (RulesController) List(ctx *Context) {
+func (rulesController) List(ctx *Context) {
 	ctx.Send(createRules(ctx.Scope))
 }
 
-func (RulesController) Get(ctx *Context) {
+func (rulesController) Get(ctx *Context) {
 	ctx.Send(createRule(ctx.Rule))
 }
 
-func (RulesController) Delete(ctx *Context) {
+func (rulesController) Delete(ctx *Context) {
 	if ctx.Scope.RemoveRule(ctx.Rule.ID()) {
 		ctx.SendNoContent()
 	} else {
@@ -50,7 +50,7 @@ func (RulesController) Delete(ctx *Context) {
 	}
 }
 
-func (RulesController) Create(ctx *Context) {
+func (rulesController) Create(ctx *Context) {
 	type data struct {
 		Name   string        `json:"name"`
 		Params config.Config `json:"config"`

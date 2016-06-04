@@ -49,7 +49,7 @@ func (i *Instance) NewScope(name, description string) *Scope {
 	return scope
 }
 
-// NewScope creates a new default scope.
+// NewDefaultScope creates a new default scope.
 func (i *Instance) NewDefaultScope(rules ...rule.Rule) *Scope {
 	scope := i.NewScope("default", "Default generic scope")
 	scope.UseRule(rules...)

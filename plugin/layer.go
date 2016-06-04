@@ -73,7 +73,7 @@ func (l *Layer) Remove(id string) bool {
 	return false
 }
 
-// Run triggers the plugins layer call chain.
+// HandleHTTP triggers the plugins layer call chain.
 // This function is designed to be executed by top-level middleware layers.
 func (l *Layer) HandleHTTP(w http.ResponseWriter, r *http.Request, h http.Handler) {
 	next := h
