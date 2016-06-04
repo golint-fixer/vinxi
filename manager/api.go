@@ -1,11 +1,11 @@
 package manager
 
 // Initialize HTTP controllers
-var index IndexController
-var rules ScopesController
-var scopes ScopesController
-var plugins PluginsController
-var instances InstancesController
+var index indexController
+var rules scopesController
+var scopes scopesController
+var plugins pluginsController
+var instances instancesController
 
 // routes stores the registered routes.
 var routes = []*Route{}

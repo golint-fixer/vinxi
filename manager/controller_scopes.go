@@ -25,10 +25,10 @@ func createScopes(scopes []*Scope) []JSONScope {
 	return list
 }
 
-// ScopesController represents the scopes entity HTTP controller.
-type ScopesController struct{}
+// scopesController represents the scopes entity HTTP controller.
+type scopesController struct{}
 
-func (ScopesController) List(ctx *Context) {
+func (scopesController) List(ctx *Context) {
 	var scopes []*Scope
 	if ctx.Instance != nil {
 		scopes = ctx.Instance.Scopes()
@@ -38,11 +38,11 @@ func (ScopesController) List(ctx *Context) {
 	ctx.Send(createScopes(scopes))
 }
 
-func (ScopesController) Get(ctx *Context) {
+func (scopesController) Get(ctx *Context) {
 	ctx.Send(createScope(ctx.Scope))
 }
 
-func (ScopesController) Delete(ctx *Context) {
+func (scopesController) Delete(ctx *Context) {
 	if ctx.Manager.RemoveScope(ctx.Scope.ID) {
 		ctx.SendNoContent()
 	} else {
@@ -50,7 +50,7 @@ func (ScopesController) Delete(ctx *Context) {
 	}
 }
 
-func (ScopesController) Create(ctx *Context) {
+func (scopesController) Create(ctx *Context) {
 	type data struct {
 		Name        string `json:"name"`
 		Description string `json:"description"`

@@ -19,10 +19,10 @@ type info struct {
 	Links         map[string]string `json:"links"`
 }
 
-// IndexController represents the base routes HTTP controller.
-type IndexController struct{}
+// indexController represents the base routes HTTP controller.
+type indexController struct{}
 
-func (IndexController) Get(ctx *Context) {
+func (indexController) Get(ctx *Context) {
 	hostname, _ := os.Hostname()
 	links := map[string]string{
 		"catalog":   "/catalog",
@@ -43,7 +43,7 @@ func (IndexController) Get(ctx *Context) {
 	})
 }
 
-func (IndexController) Catalog(ctx *Context) {
+func (indexController) Catalog(ctx *Context) {
 	rules := []rule.Info{}
 	for _, rule := range rule.Rules {
 		rules = append(rules, rule)
@@ -65,7 +65,7 @@ func (IndexController) Catalog(ctx *Context) {
 	ctx.Send(catalog)
 }
 
-func (IndexController) Manager(ctx *Context) {
+func (indexController) Manager(ctx *Context) {
 	info := struct {
 		Links map[string]string `json:"links"`
 	}{

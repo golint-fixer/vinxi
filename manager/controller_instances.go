@@ -25,18 +25,18 @@ func createInstances(instances []*Instance) []JSONInstance {
 	return list
 }
 
-// InstancesController represents the rules entity HTTP controller.
-type InstancesController struct{}
+// instancesController represents the rules entity HTTP controller.
+type instancesController struct{}
 
-func (InstancesController) List(ctx *Context) {
+func (instancesController) List(ctx *Context) {
 	ctx.Send(createInstances(ctx.Manager.Instances()))
 }
 
-func (InstancesController) Get(ctx *Context) {
+func (instancesController) Get(ctx *Context) {
 	ctx.Send(createInstance(ctx.Instance))
 }
 
-func (InstancesController) Delete(ctx *Context) {
+func (instancesController) Delete(ctx *Context) {
 	if ctx.Manager.RemoveInstance(ctx.Instance.ID()) {
 		ctx.SendNoContent()
 	} else {
