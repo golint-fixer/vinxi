@@ -8,15 +8,13 @@ go:
 before_install:
   - go get -u github.com/golang/lint/golint
   - go get github.com/mattn/goveralls
+  - go get github.com/modocache/gover
   - go get -t ./...
 
 script:
   - diff -u <(echo -n) <(gofmt -s -d ./)
   - diff -u <(echo -n) <(go vet ./...)
   - diff -u <(echo -n) <(golint ./...)
-  - go test -v -race ./...
-  # TODO: generate package-specific coverage
-  - go test -v -race -covermode=atomic -coverprofile=coverage.out
-
-after_success:
-  - goveralls -coverprofile=coverage.out -service=travis-ci
+  - go list -f '{{if len .TestGoFiles}}"go test -v -race -covermode=atomic -coverprofile={{.Dir}}/.coverprofile {{.ImportPath}}"{{end}}' ./... | xargs -L 1 sh -c
+  - gover
+  - goveralls -coverprofile=gover.coverprofile -service=travis-ci
