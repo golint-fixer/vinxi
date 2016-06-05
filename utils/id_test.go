@@ -84,7 +84,7 @@ func TestNewLenCharsMaxLength(t *testing.T) {
 	NewLenChars(32, chars)
 }
 
-func TestBias(t *testing.T) {
+func testBias(t *testing.T) {
 	chars := []byte("abcdefghijklmnopqrstuvwxyz")
 	slen := 100000
 	s := NewLenChars(slen, chars)
