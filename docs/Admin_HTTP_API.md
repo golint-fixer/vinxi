@@ -33,7 +33,7 @@ You can define multiple user/password credentials to authenticate users.
 GET /
 ```
 
-#### Response
+##### Response
 
 ```
 HTTP 200 OK
@@ -81,32 +81,10 @@ GET /plugins
 ]
 ```
 
-#### List plugins
-
-```
-GET /plugins
-```
-
-##### Response
-
-```json
-[
-  {
-    "id": "UGEZGfua5S3U0nDS",
-    "name": "auth",
-    "description": "Authorization and authentication protection",
-    "config": {
-      "scheme": "Bearer",
-      "token": "s3cr3t"
-    }
-  }
-]
-```
-
 #### Register plugin
 
 ```
-GET /plugins/{id}
+POST /plugins
 ```
 
 ##### Request Body
@@ -160,7 +138,7 @@ GET /plugins/{id}
 DELETE /plugins/{id}
 ```
 
-#### Response
+##### Response
 
 ```
 HTTP 204 No Content
@@ -174,7 +152,7 @@ HTTP 204 No Content
 GET /instances
 ```
 
-#### Response
+##### Response
 
 ```
 HTTP 200 OK
@@ -232,7 +210,7 @@ HTTP 200 OK
 GET /instances/{id}
 ```
 
-#### Response
+##### Response
 
 ```
 HTTP 200 OK
@@ -288,7 +266,7 @@ HTTP 200 OK
 DELETE /instances/{id}
 ```
 
-#### Response
+##### Response
 
 ```
 HTTP 204 No Content

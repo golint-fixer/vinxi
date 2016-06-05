@@ -5,12 +5,12 @@
 // worldwide. Distributed without any warranty.
 // http://creativecommons.org/publicdomain/zero/1.0/
 
-// Package uniuri generates random strings good for use in URIs to identify
+// Package id generates random strings good for use in URIs to identify
 // unique objects.
 //
 // Example usage:
 //
-//  s := uniuri.New() // s is now "apHCJBl7L1OmC57n"
+//  s := utils.New() // s is now "apHCJBl7L1OmC57n"
 //
 // A standard string created by New() is 16 bytes in length and consists of
 // Latin upper and lowercase letters, and numbers (from the set of 62 allowed
@@ -26,14 +26,14 @@ package utils
 import "crypto/rand"
 
 const (
-	// StdLen is a standard length of uniuri string to achive ~95 bits of entropy.
+	// StdLen is a standard length of id string to achive ~95 bits of entropy.
 	StdLen = 16
-	// UUIDLen is a length of uniuri string to achive ~119 bits of entropy, closest
+	// UUIDLen is a length of id string to achive ~119 bits of entropy, closest
 	// to what can be losslessly converted to UUIDv4 (122 bits).
 	UUIDLen = 20
 )
 
-// StdChars is a set of standard characters allowed in uniuri string.
+// StdChars is a set of standard characters allowed in id string.
 var StdChars = []byte("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
 
 // NewID returns a new random string of the standard length, consisting of
@@ -56,7 +56,7 @@ func NewLenChars(length int, chars []byte) string {
 	}
 	clen := len(chars)
 	if clen < 2 || clen > 256 {
-		panic("uniuri: wrong charset length for NewLenChars")
+		panic("id: wrong charset length for NewLenChars")
 	}
 	maxrb := 255 - (256 % clen)
 	b := make([]byte, length)
@@ -64,7 +64,7 @@ func NewLenChars(length int, chars []byte) string {
 	i := 0
 	for {
 		if _, err := rand.Read(r); err != nil {
-			panic("uniuri: error reading random bytes: " + err.Error())
+			panic("id: error reading random bytes: " + err.Error())
 		}
 		for _, rb := range r {
 			c := int(rb)

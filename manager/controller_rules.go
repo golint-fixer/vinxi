@@ -35,11 +35,11 @@ func createRule(rule rule.Rule) JSONRule {
 type rulesController struct{}
 
 func (rulesController) List(ctx *Context) {
-	ctx.Send(createRules(ctx.Scope))
+	ctx.SendOk(createRules(ctx.Scope))
 }
 
 func (rulesController) Get(ctx *Context) {
-	ctx.Send(createRule(ctx.Rule))
+	ctx.SendOk(createRule(ctx.Rule))
 }
 
 func (rulesController) Delete(ctx *Context) {
@@ -80,5 +80,5 @@ func (rulesController) Create(ctx *Context) {
 	}
 
 	ctx.Scope.UseRule(instance)
-	ctx.Send(createRule(instance))
+	ctx.SendOk(createRule(instance))
 }

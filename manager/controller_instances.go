@@ -29,11 +29,11 @@ func createInstances(instances []*Instance) []JSONInstance {
 type instancesController struct{}
 
 func (instancesController) List(ctx *Context) {
-	ctx.Send(createInstances(ctx.Manager.Instances()))
+	ctx.SendOk(createInstances(ctx.Manager.Instances()))
 }
 
 func (instancesController) Get(ctx *Context) {
-	ctx.Send(createInstance(ctx.Instance))
+	ctx.SendOk(createInstance(ctx.Instance))
 }
 
 func (instancesController) Delete(ctx *Context) {
