@@ -45,11 +45,11 @@ func (pluginsController) List(ctx *Context) {
 	} else {
 		layer = ctx.Manager.Plugins
 	}
-	ctx.Send(createPlugins(layer.All()))
+	ctx.SendOk(createPlugins(layer.All()))
 }
 
 func (pluginsController) Get(ctx *Context) {
-	ctx.Send(createPlugin(ctx.Plugin))
+	ctx.SendOk(createPlugin(ctx.Plugin))
 }
 
 func (pluginsController) Delete(ctx *Context) {
@@ -90,7 +90,7 @@ func (p pluginsController) Create(ctx *Context) {
 	}
 
 	p.registerPlugin(ctx, instance)
-	ctx.Send(createPlugin(instance))
+	ctx.SendOk(createPlugin(instance))
 }
 
 func (pluginsController) registerPlugin(ctx *Context, instance plugin.Plugin) {

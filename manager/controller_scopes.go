@@ -35,11 +35,11 @@ func (scopesController) List(ctx *Context) {
 	} else {
 		scopes = ctx.Manager.Scopes()
 	}
-	ctx.Send(createScopes(scopes))
+	ctx.SendOk(createScopes(scopes))
 }
 
 func (scopesController) Get(ctx *Context) {
-	ctx.Send(createScope(ctx.Scope))
+	ctx.SendOk(createScope(ctx.Scope))
 }
 
 func (scopesController) Delete(ctx *Context) {
@@ -73,5 +73,5 @@ func (scopesController) Create(ctx *Context) {
 		ctx.Manager.UseScope(instance)
 	}
 
-	ctx.Send(createScope(instance))
+	ctx.SendOk(createScope(instance))
 }

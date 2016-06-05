@@ -32,7 +32,7 @@ func (indexController) Get(ctx *Context) {
 		"manager":   "/manager",
 	}
 
-	ctx.Send(info{
+	ctx.SendOk(info{
 		Hostname:      hostname,
 		Version:       vinxi.Version,
 		Platform:      runtime.GOOS,
@@ -62,7 +62,7 @@ func (indexController) Catalog(ctx *Context) {
 		Plugins: plugins,
 	}
 
-	ctx.Send(catalog)
+	ctx.SendOk(catalog)
 }
 
 func (indexController) Manager(ctx *Context) {
@@ -72,5 +72,5 @@ func (indexController) Manager(ctx *Context) {
 		Links: map[string]string{"plugins": "/manager/plugins"},
 	}
 
-	ctx.Send(info)
+	ctx.SendOk(info)
 }
