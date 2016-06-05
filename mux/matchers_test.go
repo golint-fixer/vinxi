@@ -24,6 +24,7 @@ func TestMatchPath(t *testing.T) {
 		path    string
 		matches bool
 	}{
+		{"/baz", "/baz", true},
 		{"baz", "/bar/foo/baz", true},
 		{"bar", "/bar/foo/baz", true},
 		{"^/bar", "/bar/foo/baz", true},

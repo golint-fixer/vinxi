@@ -8,9 +8,11 @@ import (
 	"testing"
 )
 
-func TestMuxComposeIfMatches(t *testing.T) {
+type composer func(...*Mux) *Mux
+
+func testMuxIfMatches(t *testing.T, c composer) {
 	mx := New()
-	mx.Use(If(Method("GET"), Host("foo.com")).Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
+	mx.Use(c(Method("GET"), Host("foo.com")).Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
 		w.Header().Set("foo", "bar")
 		h.ServeHTTP(w, r)
 	}))
@@ -23,9 +25,17 @@ func TestMuxComposeIfMatches(t *testing.T) {
 	st.Expect(t, wrt.Header().Get("foo"), "bar")
 }
 
-func TestMuxComposeIfUnmatch(t *testing.T) {
+func TestMuxComposeIfMatches(t *testing.T) {
+	testMuxIfMatches(t, If)
+}
+
+func TestMuxComposeEveryMatches(t *testing.T) {
+	testMuxIfMatches(t, Every)
+}
+
+func testMuxComposeIfUnmatch(t *testing.T, c composer) {
 	mx := New()
-	mx.Use(If(Method("GET"), Host("bar.com")).Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
+	mx.Use(c(Method("GET"), Host("bar.com")).Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
 		w.Header().Set("foo", "bar")
 		h.ServeHTTP(w, r)
 	}))
@@ -38,9 +48,17 @@ func TestMuxComposeIfUnmatch(t *testing.T) {
 	st.Expect(t, wrt.Header().Get("foo"), "")
 }
 
-func TestMuxComposeOrMatch(t *testing.T) {
+func TestMuxComposeIfUnmatch(t *testing.T) {
+	testMuxComposeIfUnmatch(t, If)
+}
+
+func TestMuxComposeEveryUnmatch(t *testing.T) {
+	testMuxComposeIfUnmatch(t, Every)
+}
+
+func testMuxComposeOrMatch(t *testing.T, c composer) {
 	mx := New()
-	mx.Use(Or(Method("GET"), Host("bar.com")).Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
+	mx.Use(c(Method("GET"), Host("bar.com")).Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
 		w.Header().Set("foo", "bar")
 		h.ServeHTTP(w, r)
 	}))
@@ -53,9 +71,17 @@ func TestMuxComposeOrMatch(t *testing.T) {
 	st.Expect(t, wrt.Header().Get("foo"), "bar")
 }
 
-func TestMuxComposeOrUnMatch(t *testing.T) {
+func TestMuxComposeOrMatch(t *testing.T) {
+	testMuxComposeOrMatch(t, Or)
+}
+
+func TestMuxComposeSomeMatch(t *testing.T) {
+	testMuxComposeOrMatch(t, Some)
+}
+
+func testMuxComposeOrUnmatch(t *testing.T, c composer) {
 	mx := New()
-	mx.Use(Or(Method("GET"), Host("bar.com")).Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
+	mx.Use(c(Method("GET"), Host("bar.com")).Use(func(w http.ResponseWriter, r *http.Request, h http.Handler) {
 		w.Header().Set("foo", "bar")
 		h.ServeHTTP(w, r)
 	}))
@@ -66,6 +92,19 @@ func TestMuxComposeOrUnMatch(t *testing.T) {
 
 	mx.Layer.Run("request", wrt, req, nil)
 	st.Expect(t, wrt.Header().Get("foo"), "bar")
+
+	req.Method = "POST"
+	wrt = utils.NewWriterStub()
+	mx.Layer.Run("request", wrt, req, nil)
+	st.Expect(t, wrt.Header().Get("foo"), "")
+}
+
+func TestMuxComposeOrUnmatch(t *testing.T) {
+	testMuxComposeOrUnmatch(t, Or)
+}
+
+func TestMuxComposeSomeUnmatch(t *testing.T) {
+	testMuxComposeOrUnmatch(t, Some)
 }
 
 func newRequest() *http.Request {
